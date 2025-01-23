@@ -29,6 +29,8 @@ func (t *TodoHandler) Routes(router service.Router) {
 	router.HandleFunc("/todos", t.List)
 	router.HandleFunc("/todos/{id}", t.Get)
 	router.HandleFunc("POST /todos", t.Create)
+	router.HandleFunc("PUT /todos/{id}", t.Update)
+	router.HandleFunc("DELETE /todos/{id}", t.Delete)
 }
 
 func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -42,16 +44,19 @@ func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (t *TodoHandler) Get(w http.ResponseWriter, r *http.Request) {
 	params := t.router.WithPathParams(r)
-	id, err := strconv.Atoi(params["id"])
+	id, err := parseParamToInt(params, "id")
+
 	if err != nil {
-		jsonErrorResponse(w, http.StatusBadRequest, fmt.Errorf("invalid id: %v\n", err).Error())
+		jsonErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
+
 	todo, err := t.todoStore.Get(r.Context(), id)
 	if err != nil {
 		jsonErrorResponse(w, http.StatusNotFound, err.Error())
 		return
 	}
+
 	jsonResponse(w, http.StatusOK, todo)
 }
 
@@ -70,4 +75,67 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, http.StatusOK, todo)
+}
+
+func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	params := t.router.WithPathParams(r)
+	id, err := parseParamToInt(params, "id")
+
+	if err != nil {
+		jsonErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var todoDto store.TodoCreateDto
+	if err := parseJson(r, &todoDto); err != nil {
+		jsonErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	todo, err := t.todoStore.Get(ctx, id)
+	if err != nil {
+		jsonErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	todo, err = t.todoStore.Update(ctx, todo, todoDto)
+	if err != nil {
+		jsonErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	jsonResponse(w, http.StatusOK, todo)
+}
+
+func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	params := t.router.WithPathParams(r)
+	id, err := parseParamToInt(params, "id")
+
+	if err != nil {
+		jsonErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	todo, err := t.todoStore.Get(ctx, id)
+	if err != nil {
+		jsonErrorResponse(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	if err = t.todoStore.Delete(ctx, todo); err != nil {
+		jsonErrorResponse(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	jsonResponse(w, http.StatusOK, map[string]string{"message": "todo deleted successfully"})
+}
+
+func parseParamToInt(params map[string]string, key string) (int, error) {
+	id, err := strconv.Atoi(params[key])
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s: %v", key, err)
+	}
+	return id, nil
 }

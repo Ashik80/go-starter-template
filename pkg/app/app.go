@@ -39,7 +39,7 @@ func Init(ctx context.Context) *App {
 }
 
 func (a *App) initServer() {
-	host := ""
+	host := "localhost"
 	port := "8000"
 	addr := fmt.Sprintf("%s:%s", host, port)
 	server := http.Server{

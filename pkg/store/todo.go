@@ -43,3 +43,18 @@ func (t *TodoStore) Create(ctx context.Context, todoDto TodoCreateDto) (*ent.Tod
 	}
 	return todo, nil
 }
+
+func (t *TodoStore) Update(ctx context.Context, todo *ent.Todo, todoDto TodoCreateDto) (*ent.Todo, error) {
+	updatedTodo, err := todo.Update().SetTitle(todoDto.Title).Save(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update todo: %v", err)
+	}
+	return updatedTodo, nil
+}
+
+func (t *TodoStore) Delete(ctx context.Context, todo *ent.Todo) error {
+	if err := t.orm.Todo.DeleteOne(todo).Exec(ctx); err != nil {
+		return fmt.Errorf("failed to delete todo: %v", err)
+	}
+	return nil
+}

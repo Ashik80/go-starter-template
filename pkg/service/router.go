@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	// "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Router interface {
@@ -12,6 +12,9 @@ type Router interface {
 	HandleFunc(string, http.HandlerFunc)
 	Handle(string, http.Handler)
 	WithPathParams(*http.Request) map[string]string
+	// TODO: implement if grouping of endpoints is needed
+	// refer to chi's doc for more interfaces. https://github.com/go-chi/chi
+	// Route(pattern string, fn func(r Router)) Router
 }
 
 type ChiServerMux struct {
@@ -19,7 +22,14 @@ type ChiServerMux struct {
 }
 
 func NewChiServerMux() *ChiServerMux {
-	return &ChiServerMux{router: chi.NewRouter()}
+	r := chi.NewRouter()
+
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	return &ChiServerMux{router: r}
 }
 
 func (c *ChiServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
