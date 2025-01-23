@@ -3,7 +3,7 @@
 package todo
 
 import (
-	"gohtmx/ent/predicate"
+	"go-starter-template/ent/predicate"
 	"time"
 
 	"entgo.io/ent/dialect/sql"

@@ -1,7 +1,7 @@
 package store
 
 import (
-	"gohtmx/ent"
+	"go-starter-template/ent"
 )
 
 type Store struct {

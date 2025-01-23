@@ -4,7 +4,7 @@ package ent
 
 import (
 	"fmt"
-	"gohtmx/ent/todo"
+	"go-starter-template/ent/todo"
 	"strings"
 	"time"
 

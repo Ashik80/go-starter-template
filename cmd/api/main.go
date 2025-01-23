@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"gohtmx/pkg/app"
-	"gohtmx/pkg/handlers"
+	"go-starter-template/pkg/app"
+	"go-starter-template/pkg/handlers"
 )
 
 func main() {

@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
-	"gohtmx/ent"
+	"go-starter-template/ent"
 )
 
 type (

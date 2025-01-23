@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"gohtmx/pkg/app"
-	"gohtmx/pkg/service"
+	"go-starter-template/pkg/app"
+	"go-starter-template/pkg/service"
 )
 
 type Handler interface {

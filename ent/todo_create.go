@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gohtmx/ent/todo"
+	"go-starter-template/ent/todo"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"

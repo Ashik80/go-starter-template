@@ -6,8 +6,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gohtmx/ent/predicate"
-	"gohtmx/ent/todo"
+	"go-starter-template/ent/predicate"
+	"go-starter-template/ent/todo"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"

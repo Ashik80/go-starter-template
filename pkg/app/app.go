@@ -10,9 +10,9 @@ import (
 	"syscall"
 	"time"
 
-	"gohtmx/ent"
-	"gohtmx/pkg/service"
-	"gohtmx/pkg/store"
+	"go-starter-template/ent"
+	"go-starter-template/pkg/service"
+	"go-starter-template/pkg/store"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"

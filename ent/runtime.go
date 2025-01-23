@@ -3,8 +3,8 @@
 package ent
 
 import (
-	"gohtmx/ent/schema"
-	"gohtmx/ent/todo"
+	"go-starter-template/ent/schema"
+	"go-starter-template/ent/todo"
 	"time"
 )
 

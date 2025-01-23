@@ -1,4 +1,4 @@
-module gohtmx
+module go-starter-template
 
 go 1.23.1
 

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"gohtmx/pkg/app"
-	"gohtmx/pkg/service"
-	"gohtmx/pkg/store"
+	"go-starter-template/pkg/app"
+	"go-starter-template/pkg/service"
+	"go-starter-template/pkg/store"
 )
 
 type TodoHandler struct {

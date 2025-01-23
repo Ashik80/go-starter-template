@@ -9,9 +9,9 @@ import (
 	"log"
 	"reflect"
 
-	"gohtmx/ent/migrate"
+	"go-starter-template/ent/migrate"
 
-	"gohtmx/ent/todo"
+	"go-starter-template/ent/todo"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
