@@ -12,6 +12,7 @@ type Router interface {
 	HandleFunc(string, http.HandlerFunc)
 	Handle(string, http.Handler)
 	WithPathParams(*http.Request) map[string]string
+	Wants(*http.Request, string) bool
 	// TODO: implement if grouping of endpoints is needed
 	// refer to chi's doc for more interfaces. https://github.com/go-chi/chi
 	// Route(pattern string, fn func(r Router)) Router
@@ -53,4 +54,9 @@ func (c *ChiServerMux) WithPathParams(r *http.Request) map[string]string {
 		}
 	}
 	return params
+}
+
+func (c *ChiServerMux) Wants(r *http.Request, accept string) bool {
+	a := r.Header.Get("Accept")
+	return a == accept
 }

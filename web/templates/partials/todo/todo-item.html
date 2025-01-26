@@ -1,0 +1,7 @@
+{{ define "todo-item" }}
+  <li hx-boost="true">
+    <a href="/todos/{{ .ID }}">
+      <p>{{ .Title }}</p>
+    </a>
+  </li>
+{{ end }}
