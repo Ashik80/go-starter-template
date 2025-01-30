@@ -1,0 +1,19 @@
+{{ block "content" . }}
+  <h1>Todo</h1>
+  {{ if .Error }}
+    <p>{{ .Error }}</p>
+  {{ end }}
+
+  {{ if .Data }}
+    <ul id="todo-list">
+      {{ range .Data.Todos }}
+        {{ template "todo-item" . }}
+      {{ end }}
+    </ul>
+    {{ template "todo-form" .Data.Form }}
+  {{ end }}
+
+  <div hx-boost="true">
+    <a href="/">Home</a>
+  </div>
+{{ end }}

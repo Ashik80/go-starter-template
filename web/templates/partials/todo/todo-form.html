@@ -1,0 +1,9 @@
+{{ define "todo-form" }}
+  <form hx-post="/todos" hx-swap="outerHTML">
+    <input name="title" {{ if .Title }} value="{{ .Title }}" {{ end }} />
+    <input type="submit" value="Save" />
+    {{ if .Error }}
+      <p style="color: red;">{{ .Error }}</p>
+    {{ end }}
+  </form>
+{{ end }}

@@ -1,0 +1,30 @@
+{{ block "content" . }}
+  <h1>Todo details</h1>
+
+  {{ if .Data.Todo }}
+    <todo-detail>
+      <div id="details">
+        {{ template "todo-details-info" .Data.Todo }}
+        <button id="edit-button">Edit</button>
+        <button id="delete-button" hx-delete="/todos/{{ .Data.Todo.ID }}" hx-target="#error-message">Delete</button>
+      </div>
+      <div id="edit-form" style="display: none;">
+        {{ template "todo-details-edit-form" .Data }}
+      </div>
+    </todo-detail>
+  {{ end }}
+
+  <div id="error-message">
+    {{ if .Error }}
+      <p style="color: red;">{{ .Error }}</p>
+    {{ end }}
+  </div>
+
+  <div hx-boost="true">
+    <a href="/todos">Back to list</a>
+  </div>
+{{ end }}
+
+{{ block "scripts" . }}
+  <script src="/web/js/todo/todo-details.js"></script>
+{{ end }}

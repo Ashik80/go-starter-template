@@ -1,0 +1,5 @@
+{{ define "todo-item-oob" }}
+  <div hx-swap-oob="beforeend:#todo-list">
+    {{ template "todo-item" . }}
+  </div>
+{{ end }}

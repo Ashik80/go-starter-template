@@ -1,0 +1,10 @@
+{{ define "todo-details-edit-form" }}
+  <form {{ if .Todo }} hx-put="/todos/{{ .Todo.ID }}" hx-swap="outerHTML" {{ end }}>
+    <input name="title" {{ if .Todo }} value="{{ .Todo.Title }}" {{ end }}>
+    {{ if .Error }}
+      <p style="color: red;">{{ .Error }}</p>
+    {{ end }}
+    <button type="submit" id="save-button">Save</button>
+    <button type="button" id="cancel-button">Cancel</button>
+  </form>
+{{ end }}

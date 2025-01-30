@@ -3,7 +3,9 @@ package store
 import (
 	"context"
 	"fmt"
+
 	"go-starter-template/ent"
+	"go-starter-template/ent/todo"
 )
 
 type (
@@ -20,8 +22,14 @@ func NewTodoStore(orm *ent.Client) *TodoStore {
 	return &TodoStore{orm}
 }
 
+func NewTodoCreateDto(title string) *TodoCreateDto {
+	return &TodoCreateDto{
+		Title: title,
+	}
+}
+
 func (t *TodoStore) List(ctx context.Context) ([]*ent.Todo, error) {
-	todos, err := t.orm.Todo.Query().All(ctx)
+	todos, err := t.orm.Todo.Query().Order(todo.ByID()).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get todos: %v", err)
 	}
@@ -36,7 +44,7 @@ func (t *TodoStore) Get(ctx context.Context, id int) (*ent.Todo, error) {
 	return todo, nil
 }
 
-func (t *TodoStore) Create(ctx context.Context, todoDto TodoCreateDto) (*ent.Todo, error) {
+func (t *TodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*ent.Todo, error) {
 	todo, err := t.orm.Todo.Create().SetTitle(todoDto.Title).Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create todos: %v", err)
