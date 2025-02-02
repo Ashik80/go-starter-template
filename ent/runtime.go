@@ -17,13 +17,27 @@ func init() {
 	// todoDescTitle is the schema descriptor for title field.
 	todoDescTitle := todoFields[0].Descriptor()
 	// todo.TitleValidator is a validator for the "title" field. It is called by the builders before save.
-	todo.TitleValidator = todoDescTitle.Validators[0].(func(string) error)
+	todo.TitleValidator = func() func(string) error {
+		validators := todoDescTitle.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(title string) error {
+			for _, fn := range fns {
+				if err := fn(title); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// todoDescCreatedAt is the schema descriptor for created_at field.
-	todoDescCreatedAt := todoFields[1].Descriptor()
+	todoDescCreatedAt := todoFields[2].Descriptor()
 	// todo.DefaultCreatedAt holds the default value on creation for the created_at field.
 	todo.DefaultCreatedAt = todoDescCreatedAt.Default.(func() time.Time)
 	// todoDescUpdatedAt is the schema descriptor for updated_at field.
-	todoDescUpdatedAt := todoFields[2].Descriptor()
+	todoDescUpdatedAt := todoFields[3].Descriptor()
 	// todo.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	todo.DefaultUpdatedAt = todoDescUpdatedAt.Default.(func() time.Time)
 	// todo.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

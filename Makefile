@@ -29,8 +29,18 @@ db-downgrade:
 		--url "postgresql://postgres:postgres@localhost:5432/test_temp?search_path=public" \
 		--dev-url "postgresql://postgres:postgres@localhost:5432/test_temp?search_path=public"
 
+db-migrate-hash:
+	@atlas migrate hash \
+		--dir "file://ent/migrate/migrations"
+
 db-clean:
 	@atlas schema clean -u "postgresql://postgres:postgres@localhost:5432/test_temp?search_path=public"
+
+build-tailwind-dev:
+	@npx @tailwindcss/cli -i ./web/css/styles.css -o ./web/css/output.css --watch
+
+build-tailwind:
+	@npx @tailwindcss/cli -i ./web/css/styles.css -o ./web/css/output.css
 
 build:
 	@go build -o bin/main ./cmd/api/main.go

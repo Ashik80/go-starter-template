@@ -14,7 +14,8 @@ type (
 	}
 
 	TodoCreateDto struct {
-		Title string `json:"title"`
+		Title       string `json:"title"`
+		Description string `json:"description,omitempty"`
 	}
 )
 
@@ -45,7 +46,13 @@ func (t *TodoStore) Get(ctx context.Context, id int) (*ent.Todo, error) {
 }
 
 func (t *TodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*ent.Todo, error) {
-	todo, err := t.orm.Todo.Create().SetTitle(todoDto.Title).Save(ctx)
+	query := t.orm.Todo.Create().SetTitle(todoDto.Title)
+
+	if todoDto.Description != "" {
+		query.SetDescription(todoDto.Description)
+	}
+
+	todo, err := query.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create todos: %v", err)
 	}
@@ -53,7 +60,13 @@ func (t *TodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*ent.To
 }
 
 func (t *TodoStore) Update(ctx context.Context, todo *ent.Todo, todoDto TodoCreateDto) (*ent.Todo, error) {
-	updatedTodo, err := todo.Update().SetTitle(todoDto.Title).Save(ctx)
+	query := todo.Update().SetTitle(todoDto.Title)
+
+	if todoDto.Description != "" {
+		query.SetDescription(todoDto.Description)
+	}
+
+	updatedTodo, err := query.Save(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update todo: %v", err)
 	}

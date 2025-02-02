@@ -31,7 +31,7 @@ func Init(ctx context.Context) *App {
 	a := new(App)
 
 	a.initOrm()
-	a.autoMigrateSchema(ctx)
+	// a.autoMigrateSchema(ctx)
 	a.initRouterMux()
 	a.initFileServer()
 	a.initTemplatingEngine()

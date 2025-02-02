@@ -1,7 +1,5 @@
 {{ define "todo-details-info-oob" }}
-  <div id="details-info" hx-swap-oob="true">
-    <p>Title: {{ .Title }}</p>
-    <p>Created At: {{ .CreatedAt }}</p>
-    <p>Updated At: {{ .UpdatedAt }}</p>
+  <div id="details-info" class="mb-5" hx-swap-oob="true">
+    {{ template "todo-details-info" . }}
   </div>
 {{ end }}

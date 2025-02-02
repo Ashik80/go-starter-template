@@ -1,19 +1,15 @@
 {{ block "content" . }}
-  <h1>Todo</h1>
+  <h2 class="text-4xl font-bold dark:text-white mb-5">Todo</h2>
   {{ if .Error }}
     <p>{{ .Error }}</p>
   {{ end }}
 
   {{ if .Data }}
-    <ul id="todo-list">
+    {{ template "todo-form" .Data.Form }}
+    <ul id="todo-list" class="grid grid-cols-3 gap-5" hx-boost="true">
       {{ range .Data.Todos }}
         {{ template "todo-item" . }}
       {{ end }}
     </ul>
-    {{ template "todo-form" .Data.Form }}
   {{ end }}
-
-  <div hx-boost="true">
-    <a href="/">Home</a>
-  </div>
 {{ end }}

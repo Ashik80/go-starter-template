@@ -4,18 +4,25 @@
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Go Starter Template {{if .Title}} - {{.Title}} {{end}}</title>
-      <!--<link href="css/style.css" rel="stylesheet" />-->
+      <title>Go Starter Template {{ if .Title }} - {{ .Title }} {{ end }}</title>
+      <link href="https://flowbite.com/docs/images/logo.svg" rel="icon" />
+      <link href="/web/css/output.css" rel="stylesheet" />
       {{ block "styles" . }}
       {{ end }}
     </head>
-    <body>
-      <div id="content">
-        {{ block "content" . }}
-          ok
-        {{ end }}
+    <body class="bg-gray-800">
+      <div class="h-screen flex flex-col">
+        {{ template "header" . }}
+        <div class="grow">
+          <div id="content" class="max-w-screen-xl mt-20 m-auto px-4">
+            {{ block "content" . }}
+            {{ end }}
+          </div>
+        </div>
+        {{ template "footer" . }}
       </div>
       <script src="/web/js/htmx.min.js"></script>
+      <script src="/web/js/favicon-selector.js"></script>
       <script src="/web/js/handle-error.js"></script>
       {{ block "scripts" . }}
       {{ end }}

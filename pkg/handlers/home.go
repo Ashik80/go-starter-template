@@ -8,15 +8,18 @@ import (
 	"go-starter-template/pkg/service"
 )
 
-type HomeHandler struct {
-	*service.TemplateRenderer
-	service.Router
-}
+type (
+	HomeHandler struct {
+		*service.TemplateRenderer
+		service.Router
+	}
+)
 
 func newHomePage() *page.Page {
 	p := page.New()
 	p.Title = "Home"
 	p.Name = "home"
+	p.Path = "/"
 	return p
 }
 

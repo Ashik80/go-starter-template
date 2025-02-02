@@ -19,8 +19,9 @@ type (
 	}
 
 	TodoForm struct {
-		Title string
-		Error string
+		Title       string
+		Description string
+		Error       string
 	}
 
 	TodoListData struct {
@@ -30,10 +31,11 @@ type (
 
 	TodoData struct {
 		Todo struct {
-			ID        int
-			Title     string
-			CreatedAt string
-			UpdatedAt string
+			ID          int
+			Title       string
+			Description string
+			CreatedAt   string
+			UpdatedAt   string
 		}
 		Error string
 	}
@@ -41,8 +43,9 @@ type (
 
 func newTodoForm() *TodoForm {
 	return &TodoForm{
-		Title: "",
-		Error: "",
+		Title:       "",
+		Description: "",
+		Error:       "",
 	}
 }
 
@@ -58,6 +61,7 @@ func newTodoListPage(t *TodoListData) *page.Page {
 	p := page.New()
 	p.Title = "Todos"
 	p.Name = "todo"
+	p.Path = "/todos"
 	p.Data = t
 	return p
 }
@@ -82,11 +86,11 @@ func (t *TodoHandler) Init(a *app.App) error {
 }
 
 func (t *TodoHandler) Routes() {
-	t.Router.HandleFunc("/todos", t.List)
-	t.Router.HandleFunc("/todos/{id}", t.Get)
-	t.Router.HandleFunc("POST /todos", t.Create)
-	t.Router.HandleFunc("PUT /todos/{id}", t.Update)
-	t.Router.HandleFunc("DELETE /todos/{id}", t.Delete)
+	t.HandleFunc("/todos", t.List)
+	t.HandleFunc("/todos/{id}", t.Get)
+	t.HandleFunc("POST /todos", t.Create)
+	t.HandleFunc("PUT /todos/{id}", t.Update)
+	t.HandleFunc("DELETE /todos/{id}", t.Delete)
 }
 
 func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -152,6 +156,7 @@ func (t *TodoHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	todoData.Todo.ID = todo.ID
 	todoData.Todo.Title = todo.Title
+	todoData.Todo.Description = todo.Description
 	todoData.Todo.CreatedAt = createdAt
 	todoData.Todo.UpdatedAt = updatedAt
 
@@ -179,7 +184,10 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	title := r.FormValue("title")
+	description := r.FormValue("description")
 	form := newTodoForm()
+	form.Title = title
+	form.Description = description
 
 	if title == "" {
 		form.Error = "Title cannot be empty"
@@ -188,14 +196,16 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todoDto.Title = title
+	todoDto.Description = description
 	todo, err := t.todoStore.Create(r.Context(), todoDto)
 	if err != nil {
-		form.Title = title
 		form.Error = err.Error()
 		t.RenderPartial(w, http.StatusBadRequest, "todo-form", form)
 		return
 	}
 
+	form.Title = ""
+	form.Description = ""
 	t.RenderPartial(w, http.StatusOK, "todo-form", form)
 	t.RenderPartial(w, http.StatusOK, "todo-item-oob", todo)
 }
@@ -234,11 +244,13 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todoDto.Title = r.FormValue("title")
-
 	todoData := newTodoData()
 	todoData.Todo.ID = id
-	todoData.Todo.Title = todoDto.Title
+	todoData.Todo.Title = r.FormValue("title")
+	todoData.Todo.Description = r.FormValue("description")
+
+	todoDto.Title = todoData.Todo.Title
+	todoDto.Description = todoData.Todo.Description
 
 	todo, err := t.todoStore.Get(ctx, id)
 	if err != nil {
@@ -255,6 +267,7 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todoData.Todo.Title = todo.Title
+	todoData.Todo.Description = todo.Description
 
 	createdAt := todo.CreatedAt.Format("January 2, 2006 - 3:04PM")
 	updatedAt := todo.UpdatedAt.Format("January 2, 2006 - 3:04PM")

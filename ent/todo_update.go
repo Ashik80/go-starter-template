@@ -41,6 +41,26 @@ func (tu *TodoUpdate) SetNillableTitle(s *string) *TodoUpdate {
 	return tu
 }
 
+// SetDescription sets the "description" field.
+func (tu *TodoUpdate) SetDescription(s string) *TodoUpdate {
+	tu.mutation.SetDescription(s)
+	return tu
+}
+
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (tu *TodoUpdate) SetNillableDescription(s *string) *TodoUpdate {
+	if s != nil {
+		tu.SetDescription(*s)
+	}
+	return tu
+}
+
+// ClearDescription clears the value of the "description" field.
+func (tu *TodoUpdate) ClearDescription() *TodoUpdate {
+	tu.mutation.ClearDescription()
+	return tu
+}
+
 // Mutation returns the TodoMutation object of the builder.
 func (tu *TodoUpdate) Mutation() *TodoMutation {
 	return tu.mutation
@@ -107,6 +127,12 @@ func (tu *TodoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := tu.mutation.Title(); ok {
 		_spec.SetField(todo.FieldTitle, field.TypeString, value)
 	}
+	if value, ok := tu.mutation.Description(); ok {
+		_spec.SetField(todo.FieldDescription, field.TypeString, value)
+	}
+	if tu.mutation.DescriptionCleared() {
+		_spec.ClearField(todo.FieldDescription, field.TypeString)
+	}
 	if value, ok := tu.mutation.UpdatedAt(); ok {
 		_spec.SetField(todo.FieldUpdatedAt, field.TypeTime, value)
 	}
@@ -141,6 +167,26 @@ func (tuo *TodoUpdateOne) SetNillableTitle(s *string) *TodoUpdateOne {
 	if s != nil {
 		tuo.SetTitle(*s)
 	}
+	return tuo
+}
+
+// SetDescription sets the "description" field.
+func (tuo *TodoUpdateOne) SetDescription(s string) *TodoUpdateOne {
+	tuo.mutation.SetDescription(s)
+	return tuo
+}
+
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (tuo *TodoUpdateOne) SetNillableDescription(s *string) *TodoUpdateOne {
+	if s != nil {
+		tuo.SetDescription(*s)
+	}
+	return tuo
+}
+
+// ClearDescription clears the value of the "description" field.
+func (tuo *TodoUpdateOne) ClearDescription() *TodoUpdateOne {
+	tuo.mutation.ClearDescription()
 	return tuo
 }
 
@@ -239,6 +285,12 @@ func (tuo *TodoUpdateOne) sqlSave(ctx context.Context) (_node *Todo, err error) 
 	}
 	if value, ok := tuo.mutation.Title(); ok {
 		_spec.SetField(todo.FieldTitle, field.TypeString, value)
+	}
+	if value, ok := tuo.mutation.Description(); ok {
+		_spec.SetField(todo.FieldDescription, field.TypeString, value)
+	}
+	if tuo.mutation.DescriptionCleared() {
+		_spec.ClearField(todo.FieldDescription, field.TypeString)
 	}
 	if value, ok := tuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(todo.FieldUpdatedAt, field.TypeTime, value)

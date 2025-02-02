@@ -26,6 +26,20 @@ func (tc *TodoCreate) SetTitle(s string) *TodoCreate {
 	return tc
 }
 
+// SetDescription sets the "description" field.
+func (tc *TodoCreate) SetDescription(s string) *TodoCreate {
+	tc.mutation.SetDescription(s)
+	return tc
+}
+
+// SetNillableDescription sets the "description" field if the given value is not nil.
+func (tc *TodoCreate) SetNillableDescription(s *string) *TodoCreate {
+	if s != nil {
+		tc.SetDescription(*s)
+	}
+	return tc
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (tc *TodoCreate) SetCreatedAt(t time.Time) *TodoCreate {
 	tc.mutation.SetCreatedAt(t)
@@ -144,6 +158,10 @@ func (tc *TodoCreate) createSpec() (*Todo, *sqlgraph.CreateSpec) {
 	if value, ok := tc.mutation.Title(); ok {
 		_spec.SetField(todo.FieldTitle, field.TypeString, value)
 		_node.Title = value
+	}
+	if value, ok := tc.mutation.Description(); ok {
+		_spec.SetField(todo.FieldDescription, field.TypeString, value)
+		_node.Description = value
 	}
 	if value, ok := tc.mutation.CreatedAt(); ok {
 		_spec.SetField(todo.FieldCreatedAt, field.TypeTime, value)

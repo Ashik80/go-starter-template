@@ -15,7 +15,8 @@ type Todo struct {
 // Fields of the Todo.
 func (Todo) Fields() []ent.Field {
 	return []ent.Field{
-		field.Text("title").NotEmpty(),
+		field.String("title").MaxLen(255).NotEmpty(),
+		field.Text("description").Optional(),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now).Immutable(),
 	}
