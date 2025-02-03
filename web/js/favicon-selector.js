@@ -1,4 +1,4 @@
-(function () {
+(() => {
   const faviconLink = document.querySelector('link[rel="icon"]');
 
   window

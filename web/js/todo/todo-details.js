@@ -1,4 +1,8 @@
-if (!customElements.get("todo-detail")) {
+(() => {
+  if (customElements.get("todo-detail")) {
+    return;
+  }
+
   class TodoDetail extends HTMLElement {
     constructor() {
       super();
@@ -73,7 +77,5 @@ if (!customElements.get("todo-detail")) {
     }
   }
 
-  if (!customElements.get("todo-detail")) {
-    customElements.define("todo-detail", TodoDetail);
-  }
-}
+  customElements.define("todo-detail", TodoDetail);
+})();
