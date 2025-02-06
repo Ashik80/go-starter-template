@@ -6,7 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-starter-template/ent/session"
 	"go-starter-template/ent/todo"
+	"go-starter-template/ent/user"
 	"reflect"
 	"sync"
 
@@ -73,7 +75,9 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			todo.Table: todo.ValidColumn,
+			session.Table: session.ValidColumn,
+			todo.Table:    todo.ValidColumn,
+			user.Table:    user.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

@@ -2,3 +2,4 @@ bin/
 tmp/
 node_modules/
 web/css/output.css
+.env

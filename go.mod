@@ -6,6 +6,7 @@ require (
 	entgo.io/ent v0.14.1
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/lib/pq v1.10.9
+	golang.org/x/crypto v0.0.0-20220517005047-85d78b3ac167
 )
 
 require (

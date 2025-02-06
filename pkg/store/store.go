@@ -5,14 +5,18 @@ import (
 )
 
 type Store struct {
-	orm       *ent.Client
-	TodoStore *TodoStore
+	orm          *ent.Client
+	TodoStore    *TodoStore
+	UserStore    UserStore
+	SessionStore SessionStore
 }
 
 func NewDataStore(orm *ent.Client) *Store {
 	s := new(Store)
 	s.orm = orm
 
+	s.initUserStore()
+	s.initSessionStore()
 	s.initTodoStore()
 
 	return s
@@ -20,4 +24,12 @@ func NewDataStore(orm *ent.Client) *Store {
 
 func (s *Store) initTodoStore() {
 	s.TodoStore = NewTodoStore(s.orm)
+}
+
+func (s *Store) initUserStore() {
+	s.UserStore = NewEntUserStore(s.orm)
+}
+
+func (s *Store) initSessionStore() {
+	s.SessionStore = NewEntSessionStore(s.orm)
 }

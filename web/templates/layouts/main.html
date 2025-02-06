@@ -5,14 +5,10 @@
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>Go Starter Template {{ if .Title }} - {{ .Title }} {{ end }}</title>
-      <link href="https://flowbite.com/docs/images/logo.svg" rel="icon" />
-      <link href="/web/css/output.css" rel="stylesheet" />
-      <script defer="true" src="/web/js/htmx.min.js"></script>
-      <script defer="true" src="/web/js/favicon-selector.js"></script>
-      <script defer="true" src="/web/js/handle-error.js"></script>
+      {{ template "metatags" . }}
       {{ block "styles" . }}{{ end }}
     </head>
-    <body class="bg-gray-800">
+    <body class="dark:bg-gray-800">
       <div class="h-screen flex flex-col">
         {{ template "header" . }}
         <div class="grow">
