@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"go-starter-template/ent"
 	"go-starter-template/pkg/app"
 	"go-starter-template/pkg/page"
 	"go-starter-template/pkg/service"
@@ -15,7 +14,7 @@ type (
 	TodoHandler struct {
 		service.Router
 		*service.TemplateRenderer
-		todoStore *store.TodoStore
+		todoStore store.TodoStore
 	}
 
 	TodoForm struct {
@@ -25,7 +24,7 @@ type (
 	}
 
 	TodoListData struct {
-		Todos []*ent.Todo
+		Todos []*store.Todo
 		Form  *TodoForm
 	}
 
