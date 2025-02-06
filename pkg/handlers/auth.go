@@ -130,7 +130,13 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionExpiry := time.Now().Add(24 * time.Hour)
+	var sessionExpiry time.Time
+	if loginForm.Remember == "on" {
+		sessionExpiry = time.Now().Add(30 * 24 * time.Hour)
+	} else {
+		sessionExpiry = time.Now().Add(1 * time.Hour)
+	}
+
 	sess, err := h.sessionStore.Create(ctx, user, sessionExpiry)
 	if err != nil {
 		log.Printf("ERROR: %v", err)
