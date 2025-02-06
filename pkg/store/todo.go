@@ -3,13 +3,32 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go-starter-template/ent"
 	"go-starter-template/ent/todo"
 )
 
 type (
-	TodoStore struct {
+	Todo struct {
+		ID          int       `json:"id,omitempty"`
+		Title       string    `json:"title,omitempty"`
+		Description string    `json:"description,omitempty"`
+		CreatedAt   time.Time `json:"created_at,omitempty"`
+		UpdatedAt   time.Time `json:"updated_at,omitempty"`
+	}
+
+	TodoStore interface {
+		List(ctx context.Context) ([]*Todo, error)
+		Get(ctx context.Context, id int) (*Todo, error)
+		Create(ctx context.Context, todoDto *TodoCreateDto) (*Todo, error)
+		Update(ctx context.Context, todo *Todo, todoDto TodoCreateDto) (*Todo, error)
+		Delete(ctx context.Context, todo *Todo) error
+	}
+)
+
+type (
+	EntTodoStore struct {
 		orm *ent.Client
 	}
 
@@ -19,8 +38,8 @@ type (
 	}
 )
 
-func NewTodoStore(orm *ent.Client) *TodoStore {
-	return &TodoStore{orm}
+func NewEntTodoStore(orm *ent.Client) *EntTodoStore {
+	return &EntTodoStore{orm}
 }
 
 func NewTodoCreateDto(title string) *TodoCreateDto {
@@ -29,23 +48,24 @@ func NewTodoCreateDto(title string) *TodoCreateDto {
 	}
 }
 
-func (t *TodoStore) List(ctx context.Context) ([]*ent.Todo, error) {
+func (t *EntTodoStore) List(ctx context.Context) ([]*Todo, error) {
 	todos, err := t.orm.Todo.Query().Order(todo.ByID()).All(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get todos: %v", err)
 	}
-	return todos, nil
+	return mapTodos(todos), nil
 }
 
-func (t *TodoStore) Get(ctx context.Context, id int) (*ent.Todo, error) {
+func (t *EntTodoStore) Get(ctx context.Context, id int) (*Todo, error) {
 	todo, err := t.orm.Todo.Get(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get todo: %v", err)
 	}
-	return todo, nil
+	fmt.Println(todo)
+	return mapTodo(todo), nil
 }
 
-func (t *TodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*ent.Todo, error) {
+func (t *EntTodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*Todo, error) {
 	query := t.orm.Todo.Create().SetTitle(todoDto.Title)
 
 	if todoDto.Description != "" {
@@ -56,11 +76,11 @@ func (t *TodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*ent.To
 	if err != nil {
 		return nil, fmt.Errorf("failed to create todos: %v", err)
 	}
-	return todo, nil
+	return mapTodo(todo), nil
 }
 
-func (t *TodoStore) Update(ctx context.Context, todo *ent.Todo, todoDto TodoCreateDto) (*ent.Todo, error) {
-	query := todo.Update().SetTitle(todoDto.Title)
+func (t *EntTodoStore) Update(ctx context.Context, todo *Todo, todoDto TodoCreateDto) (*Todo, error) {
+	query := t.orm.Todo.UpdateOneID(todo.ID).SetTitle(todoDto.Title)
 
 	if todoDto.Description != "" {
 		query.SetDescription(todoDto.Description)
@@ -70,12 +90,30 @@ func (t *TodoStore) Update(ctx context.Context, todo *ent.Todo, todoDto TodoCrea
 	if err != nil {
 		return nil, fmt.Errorf("failed to update todo: %v", err)
 	}
-	return updatedTodo, nil
+	return mapTodo(updatedTodo), nil
 }
 
-func (t *TodoStore) Delete(ctx context.Context, todo *ent.Todo) error {
-	if err := t.orm.Todo.DeleteOne(todo).Exec(ctx); err != nil {
+func (t *EntTodoStore) Delete(ctx context.Context, todo *Todo) error {
+	if err := t.orm.Todo.DeleteOneID(todo.ID).Exec(ctx); err != nil {
 		return fmt.Errorf("failed to delete todo: %v", err)
 	}
 	return nil
+}
+
+func mapTodo(todo *ent.Todo) *Todo {
+	return &Todo{
+		ID:          todo.ID,
+		Title:       todo.Title,
+		Description: todo.Description,
+		CreatedAt:   todo.CreatedAt,
+		UpdatedAt:   todo.UpdatedAt,
+	}
+}
+
+func mapTodos(todos []*ent.Todo) []*Todo {
+	var ts []*Todo
+	for _, todo := range todos {
+		ts = append(ts, mapTodo(todo))
+	}
+	return ts
 }

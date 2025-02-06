@@ -9,18 +9,20 @@ import (
 	"go-starter-template/ent/user"
 )
 
-type User struct {
-	ID        int       `json:"id,omitempty"`
-	Email     string    `json:"email,omitempty"`
-	Password  string    `json:"password,omitempty"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
-}
+type (
+	User struct {
+		ID        int       `json:"id,omitempty"`
+		Email     string    `json:"email,omitempty"`
+		Password  string    `json:"password,omitempty"`
+		CreatedAt time.Time `json:"created_at,omitempty"`
+		UpdatedAt time.Time `json:"updated_at,omitempty"`
+	}
 
-type UserStore interface {
-	Create(ctx context.Context, email string, passwordHash string) (*User, error)
-	GetByEmail(ctx context.Context, email string) (*User, error)
-}
+	UserStore interface {
+		Create(ctx context.Context, email string, passwordHash string) (*User, error)
+		GetByEmail(ctx context.Context, email string) (*User, error)
+	}
+)
 
 type EntUserStore struct {
 	orm *ent.Client

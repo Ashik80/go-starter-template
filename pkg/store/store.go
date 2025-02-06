@@ -6,7 +6,7 @@ import (
 
 type Store struct {
 	orm          *ent.Client
-	TodoStore    *TodoStore
+	TodoStore    TodoStore
 	UserStore    UserStore
 	SessionStore SessionStore
 }
@@ -23,7 +23,7 @@ func NewDataStore(orm *ent.Client) *Store {
 }
 
 func (s *Store) initTodoStore() {
-	s.TodoStore = NewTodoStore(s.orm)
+	s.TodoStore = NewEntTodoStore(s.orm)
 }
 
 func (s *Store) initUserStore() {

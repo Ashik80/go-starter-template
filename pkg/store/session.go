@@ -9,17 +9,19 @@ import (
 	"github.com/google/uuid"
 )
 
-type Session struct {
-	ID        uuid.UUID `json:"id,omitempty"`
-	ExpiresAt time.Time `json:"expires_at,omitempty"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
-}
+type (
+	Session struct {
+		ID        uuid.UUID `json:"id,omitempty"`
+		ExpiresAt time.Time `json:"expires_at,omitempty"`
+		CreatedAt time.Time `json:"created_at,omitempty"`
+		UpdatedAt time.Time `json:"updated_at,omitempty"`
+	}
 
-type SessionStore interface {
-	Create(ctx context.Context, user *User, expiresAt time.Time) (*Session, error)
-	Get(ctx context.Context, sessionId string) (*Session, error)
-}
+	SessionStore interface {
+		Create(ctx context.Context, user *User, expiresAt time.Time) (*Session, error)
+		Get(ctx context.Context, sessionId string) (*Session, error)
+	}
+)
 
 type EntSessionStore struct {
 	orm *ent.Client
