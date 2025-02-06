@@ -1,7 +1,7 @@
 {{ block "content" . }}
   <h2 class="text-4xl font-bold dark:text-white mb-5">Todo</h2>
   {{ if .Error }}
-    <p>{{ .Error }}</p>
+    <p class="text-red-400 dark:text-red-400">{{ .Error }}</p>
   {{ end }}
 
   {{ if .Data }}

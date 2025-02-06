@@ -1,3 +1,9 @@
+include .env
+
+dbDriver = postgres
+dsn = user=${DB_USER} dbname=${DB_NAME} password=${DB_PASSWORD} host=${DB_HOST} port=${DB_PORT} sslmode=${DB_SSL_MODE}
+migrationsDir = ./pkg/migrations
+
 ent-install:
 	@go get entgo.io/ent/cmd/ent
 
@@ -8,33 +14,16 @@ ent-gen:
 	@go generate ./ent
 
 db-status:
-	@atlas migrate status \
-		--dir "file://ent/migrate/migrations" \
-		--url "postgresql://postgres:postgres@localhost:5432/test_temp?search_path=public"
+	@GOOSE_DRIVER="$(dbDriver)" GOOSE_DBSTRING="$(dsn)" goose status -dir $(migrationsDir)
 
 db-migrate:
-	@atlas migrate diff $(name) \
-		--dir "file://ent/migrate/migrations" \
-		--to "ent://ent/schema" \
-		--dev-url "postgresql://postgres:postgres@localhost:5432/test_temp?search_path=public"
+	@GOOSE_DRIVER="$(dbDriver)" GOOSE_DBSTRING="$(dsn)" goose create $(name) sql -dir $(migrationsDir)
 
 db-upgrade:
-	@atlas migrate apply \
-		--dir "file://ent/migrate/migrations" \
-		--url "postgresql://postgres:postgres@localhost:5432/test_temp?search_path=public"
+	@GOOSE_DRIVER="$(dbDriver)" GOOSE_DBSTRING="$(dsn)" goose up -dir $(migrationsDir)
 
 db-downgrade:
-	@atlas migrate down \
-		--dir "file://ent/migrate/migrations" \
-		--url "postgresql://postgres:postgres@localhost:5432/test_temp?search_path=public" \
-		--dev-url "postgresql://postgres:postgres@localhost:5432/test_temp?search_path=public"
-
-db-migrate-hash:
-	@atlas migrate hash \
-		--dir "file://ent/migrate/migrations"
-
-db-clean:
-	@atlas schema clean -u "postgresql://postgres:postgres@localhost:5432/test_temp?search_path=public"
+	@GOOSE_DRIVER="$(dbDriver)" GOOSE_DBSTRING="$(dsn)" goose down -dir $(migrationsDir)
 
 build-tailwind-dev:
 	@npx @tailwindcss/cli -i ./web/css/styles.css -o ./web/css/output.css --watch
