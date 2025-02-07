@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go-starter-template/ent"
+	"go-starter-template/ent/session"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,11 +16,13 @@ type (
 		ExpiresAt time.Time `json:"expires_at,omitempty"`
 		CreatedAt time.Time `json:"created_at,omitempty"`
 		UpdatedAt time.Time `json:"updated_at,omitempty"`
+		User      *User     `json:"user,omitempty"`
 	}
 
 	SessionStore interface {
 		Create(ctx context.Context, user *User, expiresAt time.Time) (*Session, error)
 		Get(ctx context.Context, sessionId string) (*Session, error)
+		GetWithUser(ctx context.Context, sessionId string) (*Session, error)
 	}
 )
 
@@ -45,6 +48,16 @@ func (s *EntSessionStore) Get(ctx context.Context, sessionId string) (*Session, 
 		return nil, fmt.Errorf("failed to retrieve session: %v\n", err)
 	}
 	return mapSession(sess), err
+}
+
+func (s *EntSessionStore) GetWithUser(ctx context.Context, sessionId string) (*Session, error) {
+	sess, err := s.orm.Session.Query().Where(session.ID(uuid.MustParse(sessionId))).WithUser().Only(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve session: %v\n", err)
+	}
+	mappedSession := mapSession(sess)
+	mappedSession.User = mapUser(sess.Edges.User)
+	return mappedSession, err
 }
 
 func mapSession(sess *ent.Session) *Session {
