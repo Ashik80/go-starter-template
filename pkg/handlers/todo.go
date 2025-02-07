@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"go-starter-template/pkg/app"
+	"go-starter-template/pkg/middlewares"
 	"go-starter-template/pkg/page"
 	"go-starter-template/pkg/service"
 	"go-starter-template/pkg/store"
@@ -14,7 +15,8 @@ type (
 	TodoHandler struct {
 		service.Router
 		*service.TemplateRenderer
-		todoStore store.TodoStore
+		middleware *middlewares.Middleware
+		todoStore  store.TodoStore
 	}
 
 	TodoForm struct {
@@ -81,10 +83,13 @@ func (t *TodoHandler) Init(a *app.App) error {
 	t.Router = a.Router
 	t.todoStore = a.Store.TodoStore
 	t.TemplateRenderer = a.TemplateRenderer
+	t.middleware = a.Middleware
 	return nil
 }
 
 func (t *TodoHandler) Routes() {
+	// INFO: to protect a route middleware must be called like this
+	// t.Handle("/todos", t.middleware.AuthMiddleware(http.HandlerFunc(t.List)))
 	t.HandleFunc("/todos", t.List)
 	t.HandleFunc("/todos/{id}", t.Get)
 	t.HandleFunc("POST /todos", t.Create)
