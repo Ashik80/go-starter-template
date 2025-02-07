@@ -61,7 +61,6 @@ func (t *EntTodoStore) Get(ctx context.Context, id int) (*Todo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get todo: %v", err)
 	}
-	fmt.Println(todo)
 	return mapTodo(todo), nil
 }
 

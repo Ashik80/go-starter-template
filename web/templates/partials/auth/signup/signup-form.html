@@ -27,22 +27,16 @@
         >Your password</label
       >
       <div class="relative">
-        <input
-          type="password"
-          id="password"
-          name="password"
-          class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          required
-          {{ if .Password }} value="{{ .Password }}" {{ end }}
-        />
-        <svg id="open-eye" class="hidden absolute right-2 top-2 text-gray-900 dark:text-white cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1 12C1 12 5 3 12 3s11 9 11 9-4 9-11 9S1 12 1 12z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-        <svg id="closed-eye" class="absolute right-2 top-2 text-gray-900 dark:text-white cursor-pointer" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M1 12C1 12 5 21 12 21s11-9 11-9-4-9-11-9S1 12 1 12z"/>
-          <line x1="1" y1="12" x2="23" y2="12"/>
-        </svg>
+        <password-input-control>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            required
+            {{ if .Password }} value="{{ .Password }}" {{ end }}
+          />
+        </password-input-control>
       </div>
       {{ if .Error.Password.Validations }}
         <ul class="text-red-400 mt-2 list-disc list-inside">
