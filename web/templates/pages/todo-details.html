@@ -1,48 +1,64 @@
 {{ block "content" . }}
-  <h2 class="text-4xl font-bold dark:text-white mb-5">Todo Details</h2>
+<h2 class="text-4xl font-bold dark:text-white mb-5">Todo Details</h2>
 
-  {{ if .Data.Todo }}
-    <todo-detail>
-      <div id="details" class="mb-5">
-        <div id="details-info" class="mb-5">
-          {{ template "todo-details-info" .Data.Todo }}
-        </div>
-        <button id="edit-button" type="button" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 cursor-pointer">Edit</button>
-        <button id="delete-button" type="button" class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900 cursor-pointer" hx-delete="/todos/{{ .Data.Todo.ID }}" hx-target="#error-message">Delete</button>
-      </div>
-      <div id="edit-form" style="display: none;">
-        {{ template "todo-details-edit-form" .Data }}
-      </div>
-    </todo-detail>
-  {{ end }}
-
-  <div id="error-message">
-    {{ if .Error }}
-      <p style="color: red;">{{ .Error }}</p>
-    {{ end }}
+{{ if .Data.Todo }}
+<!--<todo-detail>-->
+<div id="todo-detail-form-container" x-data="{ isEditMode: false }">
+  <div id="details" class="mb-5" x-show="!isEditMode">
+    <div id="details-info" class="mb-5">
+      {{ template "todo-details-info" .Data.Todo }}
+    </div>
+    <button
+      id="edit-button"
+      type="button"
+      @click="isEditMode = true"
+      class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 cursor-pointer"
+    >
+      Edit
+    </button>
+    <button
+      id="delete-button"
+      type="button"
+      class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900 cursor-pointer"
+      hx-delete="/todos/{{ .Data.Todo.ID }}"
+      hx-target="#error-message"
+    >
+      Delete
+    </button>
   </div>
-
-  <div hx-boost="true">
-    <a href="/todos" class="text-gray-500 dark:text-gray-400 font-bold flex gap-1">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="22"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 5 5 12 12 19"></polyline>
-      </svg>
-      Back to list
-    </a>
+  <div id="edit-form" x-show="isEditMode">
+    {{ template "todo-details-edit-form" .Data }}
   </div>
+</div>
+<!--</todo-detail>-->
 {{ end }}
 
-{{ block "scripts" . }}
-  <script type="module" src="/web/js/todo/todo-details.js"></script>
+<div id="error-message">
+  {{ if .Error }}
+  <p style="color: red">{{ .Error }}</p>
+  {{ end }}
+</div>
+
+<div hx-boost="true">
+  <a
+    href="/todos"
+    class="text-gray-500 dark:text-gray-400 font-bold flex gap-1"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="22"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 5 5 12 12 19"></polyline>
+    </svg>
+    Back to list
+  </a>
+</div>
 {{ end }}
