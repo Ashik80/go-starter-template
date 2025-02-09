@@ -1,21 +1,9 @@
-{{ define "auth" }}
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Go Starter Template {{ if .Title }}- {{ .Title }}{{ end }}</title>
-      {{ template "metatags" . }}
-      {{ block "styles" . }}{{ end }}
-    </head>
-    <body class="dark:bg-gray-800">
-      <div class="h-screen flex flex-col">
-        {{ template "public-header" . }}
-        <div class="m-auto max-w-xl w-full min-w-3xs">
-          {{ block "content" . }}{{ end }}
-        </div>
-        {{ block "scripts" . }}{{ end }}
-      </div>
-    </body>
-  </html>
+{{ define "layout" }}
+<div class="h-screen flex flex-col">
+  {{ template "public-header" . }}
+  <div class="m-auto max-w-xl w-full min-w-3xs">
+    {{ block "content" . }}{{ end }}
+  </div>
+  {{ block "scripts" . }}{{ end }}
+</div>
 {{ end }}

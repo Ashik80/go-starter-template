@@ -43,7 +43,7 @@ func getTemplateKey(layoutPath, pagePath string) string {
 	return fmt.Sprintf("%s:%s", layoutName, pageName)
 }
 
-func NewTemplateRenderer(layoutDir, pagesDir, partialsDir string) (*TemplateRenderer, error) {
+func NewTemplateRenderer(baseTemplateFile, layoutDir, pagesDir, partialsDir string) (*TemplateRenderer, error) {
 	templates := make(map[string]*template.Template)
 
 	layouts, err := walkTemplateFiles(layoutDir)
@@ -92,7 +92,7 @@ func NewTemplateRenderer(layoutDir, pagesDir, partialsDir string) (*TemplateRend
 	for _, layoutFile := range layouts {
 		for _, pageFile := range pages {
 			key := getTemplateKey(layoutFile, pageFile)
-			files := append([]string{layoutFile, pageFile}, partials...)
+			files := append([]string{baseTemplateFile, layoutFile, pageFile}, partials...)
 			tmpl, err := template.ParseFiles(files...)
 			if err != nil {
 				errorMsg := fmt.Sprintf("failed to parse template %s", key)
@@ -138,8 +138,7 @@ func (t *TemplateRenderer) Render(w http.ResponseWriter, p *page.Page) error {
 		return fmt.Errorf("%s", errorMsg)
 	}
 
-	templateName := filepath.Base(p.Layout)
-	return tmpl.ExecuteTemplate(w, templateName, p)
+	return tmpl.ExecuteTemplate(w, "base", p)
 }
 
 func (t *TemplateRenderer) RenderPartial(w http.ResponseWriter, statusCode int, partial string, data any) error {

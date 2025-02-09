@@ -93,7 +93,12 @@ func (a *App) initStores() {
 }
 
 func (a *App) initTemplatingEngine() {
-	tr, err := service.NewTemplateRenderer("web/templates/layouts", "web/templates/pages", "web/templates/partials")
+	tr, err := service.NewTemplateRenderer(
+		"web/templates/base.html",
+		"web/templates/layouts",
+		"web/templates/pages",
+		"web/templates/partials",
+	)
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}

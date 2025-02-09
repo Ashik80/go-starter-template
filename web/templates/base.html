@@ -1,0 +1,20 @@
+{{ define "base" }}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    {{ block "title" . }}
+    <title>Go Starter Template {{ if .Title }} - {{ .Title }} {{ end }}</title>
+    {{ end }}
+    <!-- prettier-ignore -->
+    {{ template "metatags" . }}
+    {{ block "styles" . }}{{ end }}
+  </head>
+  <body class="dark:bg-gray-800">
+    <!--prettier-ignore-->
+    {{ template "layout" . }}
+    {{ block "scripts" . }}{{ end }}
+  </body>
+</html>
+{{ end }}

@@ -1,25 +1,11 @@
-{{ define "main" }}
-  <!doctype html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Go Starter Template {{ if .Title }} - {{ .Title }} {{ end }}</title>
-      {{ template "metatags" . }}
-      {{ block "styles" . }}{{ end }}
-    </head>
-    <body class="dark:bg-gray-800">
-      <div class="h-screen flex flex-col">
-        {{ template "header" . }}
-        <div class="grow">
-          <div id="content" class="max-w-screen-xl mt-20 m-auto px-4">
-            {{ block "content" . }}
-            {{ end }}
-          </div>
-        </div>
-        {{ template "footer" . }}
-      </div>
-      {{ block "scripts" . }}{{ end }}
-    </body>
-  </html>
+{{ define "layout" }}
+<div class="h-screen flex flex-col">
+  {{ template "header" . }}
+  <div class="grow">
+    <div id="content" class="max-w-screen-xl mt-20 m-auto px-4">
+      {{ block "content" . }}{{ end }}
+    </div>
+  </div>
+  {{ template "footer" . }}
+</div>
 {{ end }}
