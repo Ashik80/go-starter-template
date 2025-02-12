@@ -5,11 +5,7 @@ import (
 	"net/http"
 
 	"go-starter-template/pkg/store"
-
-	"github.com/gorilla/csrf"
 )
-
-type MiddlewareFunc func(next http.Handler) http.Handler
 
 func AuthMiddleware(sessionStore store.SessionStore) MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
@@ -34,9 +30,4 @@ func AuthMiddleware(sessionStore store.SessionStore) MiddlewareFunc {
 			next.ServeHTTP(w, r)
 		})
 	}
-}
-
-func CSRFMiddleware(next http.Handler) http.Handler {
-	c := csrf.Protect([]byte("somehting-in-the-way"))
-	return c(next)
 }

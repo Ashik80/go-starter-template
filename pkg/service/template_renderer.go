@@ -143,7 +143,9 @@ func (t *TemplateRenderer) Render(w http.ResponseWriter, p *page.Page) error {
 
 func (t *TemplateRenderer) RenderPartial(w http.ResponseWriter, statusCode int, partial string, data any) error {
 	w.Header().Add("Content-Type", "text/html")
-	w.WriteHeader(statusCode)
+	if statusCode != 0 {
+		w.WriteHeader(statusCode)
+	}
 	return t.partials.ExecuteTemplate(w, partial, data)
 }
 

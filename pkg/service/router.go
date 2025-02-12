@@ -4,62 +4,63 @@ import (
 	"net/http"
 
 	"go-starter-template/pkg/middlewares"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Router interface {
 	ServeHTTP(http.ResponseWriter, *http.Request)
 	HandleFunc(string, http.HandlerFunc)
 	Handle(string, http.Handler)
-	WithPathParams(*http.Request) map[string]string
+	Use(middlewares ...func(http.Handler) http.Handler)
 	Wants(*http.Request, string) bool
 	// TODO: implement if grouping of endpoints is needed
 	// refer to chi's doc for more interfaces. https://github.com/go-chi/chi
 	// Route(pattern string, fn func(r Router)) Router
 }
 
-type ChiServerMux struct {
-	router *chi.Mux
+type NetServerMux struct {
+	mux *http.ServeMux
+	mws []middlewares.MiddlewareFunc
 }
 
-func NewChiServerMux() *ChiServerMux {
-	r := chi.NewRouter()
-
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middlewares.CSRFMiddleware)
-
-	return &ChiServerMux{router: r}
-}
-
-func (c *ChiServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c.router.ServeHTTP(w, r)
-}
-
-func (c *ChiServerMux) HandleFunc(path string, handler http.HandlerFunc) {
-	c.router.HandleFunc(path, handler)
-}
-
-func (c *ChiServerMux) Handle(path string, handler http.Handler) {
-	c.router.Handle(path, handler)
-}
-
-func (c *ChiServerMux) WithPathParams(r *http.Request) map[string]string {
-	params := make(map[string]string)
-	ctx := chi.RouteContext(r.Context())
-	if ctx != nil {
-		for i, key := range ctx.URLParams.Keys {
-			params[key] = ctx.URLParams.Values[i]
-		}
+func NewNetServerMux() *NetServerMux {
+	mux := http.NewServeMux()
+	n := &NetServerMux{
+		mux: mux,
+		mws: []middlewares.MiddlewareFunc{},
 	}
-	return params
+
+	n.Use(middlewares.Logger)
+	n.Use(middlewares.CSRFMiddleware)
+
+	return n
 }
 
-func (c *ChiServerMux) Wants(r *http.Request, accept string) bool {
+func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	firstMw := n.mws[0]
+	h := firstMw(n.mux)
+
+	for _, mw := range n.mws[1:] {
+		h = mw(h)
+	}
+
+	h.ServeHTTP(w, r)
+}
+
+func (n *NetServerMux) HandleFunc(pattern string, handler http.HandlerFunc) {
+	n.mux.HandleFunc(pattern, handler)
+}
+
+func (n *NetServerMux) Handle(pattern string, handler http.Handler) {
+	n.mux.Handle(pattern, handler)
+}
+
+func (n *NetServerMux) Wants(r *http.Request, accept string) bool {
 	a := r.Header.Get("Accept")
 	return a == accept
+}
+
+func (n *NetServerMux) Use(middlewares ...func(http.Handler) http.Handler) {
+	for _, mw := range middlewares {
+		n.mws = append(n.mws, mw)
+	}
 }

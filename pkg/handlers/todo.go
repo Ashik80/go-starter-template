@@ -132,8 +132,7 @@ func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *TodoHandler) Get(w http.ResponseWriter, r *http.Request) {
-	params := t.Router.WithPathParams(r)
-	id, err := parseParamToInt(params, "id")
+	id, err := parseToInt(r.PathValue("id"))
 
 	if t.Wants(r, "application/json") {
 		if err != nil {
@@ -222,8 +221,7 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	params := t.Router.WithPathParams(r)
-	id, err := parseParamToInt(params, "id")
+	id, err := parseToInt(r.PathValue("id"))
 
 	var todoDto store.TodoCreateDto
 
@@ -286,14 +284,14 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	todoData.Todo.UpdatedAt = updatedAt
 
 	w.Header().Add("Hx-Trigger", "close_edit_form")
-	t.RenderPartial(w, http.StatusOK, "todo-details-info-oob", todoData.Todo)
-	t.RenderPartial(w, http.StatusOK, "todo-details-edit-form", todoData)
+	w.WriteHeader(http.StatusOK)
+	t.RenderPartial(w, 0, "todo-details-info-oob", todoData.Todo)
+	t.RenderPartial(w, 0, "todo-details-edit-form", todoData)
 }
 
 func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	params := t.Router.WithPathParams(r)
-	id, err := parseParamToInt(params, "id")
+	id, err := parseToInt(r.PathValue("id"))
 
 	if err != nil {
 		jsonErrorResponse(w, http.StatusBadRequest, err.Error())

@@ -54,12 +54,12 @@ func (a *App) initApplicationServer() {
 
 func (a *App) initFileServer() {
 	fs := http.FileServer(http.Dir("./web"))
-	a.Router.Handle("/web/*", http.StripPrefix("/web/", fs))
+	a.Router.Handle("/web/", http.StripPrefix("/web/", fs))
 	log.Println("INFO: file server initialized in directory web/ directory")
 }
 
 func (a *App) initRouterMux() {
-	a.Router = service.NewChiServerMux()
+	a.Router = service.NewNetServerMux()
 	log.Println("INFO: router initialized")
 }
 

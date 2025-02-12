@@ -45,12 +45,12 @@ func parseJson(r *http.Request, m any) error {
 	return nil
 }
 
-func parseParamToInt(params map[string]string, key string) (int, error) {
-	id, err := strconv.Atoi(params[key])
+func parseToInt(value string) (int, error) {
+	n, err := strconv.Atoi(value)
 	if err != nil {
-		return 0, fmt.Errorf("invalid %s: %v", key, err)
+		return 0, fmt.Errorf("invalid number: %v", err)
 	}
-	return id, nil
+	return n, nil
 }
 
 func RegisterRoutes(a *app.App) error {
