@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"go-starter-template/pkg/app"
+	"go-starter-template/pkg/form"
 	"go-starter-template/pkg/middlewares"
 	"go-starter-template/pkg/page"
 	"go-starter-template/pkg/service"
@@ -15,11 +16,12 @@ type (
 	TodoHandler struct {
 		service.Router
 		*service.TemplateRenderer
-		middleware *middlewares.Middleware
-		todoStore  store.TodoStore
+		todoStore      store.TodoStore
+		authMiddleware middlewares.MiddlewareFunc
 	}
 
 	TodoForm struct {
+		form.Form
 		Title       string
 		Description string
 		Error       string
@@ -32,6 +34,7 @@ type (
 
 	TodoData struct {
 		Todo struct {
+			form.Form
 			ID          int
 			Title       string
 			Description string
@@ -42,11 +45,12 @@ type (
 	}
 )
 
-func newTodoForm() *TodoForm {
+func newTodoForm(r *http.Request) *TodoForm {
 	return &TodoForm{
 		Title:       "",
 		Description: "",
 		Error:       "",
+		Form:        form.NewForm(r),
 	}
 }
 
@@ -54,8 +58,10 @@ func newTodoListData() *TodoListData {
 	return &TodoListData{}
 }
 
-func newTodoData() *TodoData {
-	return &TodoData{}
+func newTodoData(r *http.Request) *TodoData {
+	t := new(TodoData)
+	t.Todo.Form = form.NewForm(r)
+	return t
 }
 
 func newTodoListPage(t *TodoListData) *page.Page {
@@ -82,14 +88,14 @@ func init() {
 func (t *TodoHandler) Init(a *app.App) error {
 	t.Router = a.Router
 	t.todoStore = a.Store.TodoStore
+	t.authMiddleware = middlewares.AuthMiddleware(a.Store.SessionStore)
 	t.TemplateRenderer = a.TemplateRenderer
-	t.middleware = a.Middleware
 	return nil
 }
 
 func (t *TodoHandler) Routes() {
 	// INFO: to protect a route middleware must be called like this
-	// t.Handle("/todos", t.middleware.AuthMiddleware(http.HandlerFunc(t.List)))
+	// t.Handle("/todos", t.authMiddleware(http.HandlerFunc(t.List)))
 	t.HandleFunc("/todos", t.List)
 	t.HandleFunc("/todos/{id}", t.Get)
 	t.HandleFunc("POST /todos", t.Create)
@@ -113,7 +119,7 @@ func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
 	todoData := newTodoListData()
 	p := newTodoListPage(todoData)
 
-	todoData.Form = newTodoForm()
+	todoData.Form = newTodoForm(r)
 
 	if err != nil {
 		p.Error = err.Error()
@@ -145,7 +151,7 @@ func (t *TodoHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todoData := newTodoData()
+	todoData := newTodoData(r)
 	p := newTodoPage(todoData)
 
 	todo, err := t.todoStore.Get(r.Context(), id)
@@ -189,7 +195,7 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	title := r.FormValue("title")
 	description := r.FormValue("description")
-	form := newTodoForm()
+	form := newTodoForm(r)
 	form.Title = title
 	form.Description = description
 
@@ -248,7 +254,7 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todoData := newTodoData()
+	todoData := newTodoData(r)
 	todoData.Todo.ID = id
 	todoData.Todo.Title = r.FormValue("title")
 	todoData.Todo.Description = r.FormValue("description")
@@ -279,6 +285,7 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	todoData.Todo.CreatedAt = createdAt
 	todoData.Todo.UpdatedAt = updatedAt
 
+	w.Header().Add("Hx-Trigger", "close_edit_form")
 	t.RenderPartial(w, http.StatusOK, "todo-details-info-oob", todoData.Todo)
 	t.RenderPartial(w, http.StatusOK, "todo-details-edit-form", todoData)
 }

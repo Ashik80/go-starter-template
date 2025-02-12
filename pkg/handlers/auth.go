@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go-starter-template/pkg/app"
+	"go-starter-template/pkg/form"
 	"go-starter-template/pkg/helpers/auth_helpers"
 	"go-starter-template/pkg/page"
 	"go-starter-template/pkg/service"
@@ -32,6 +33,7 @@ type (
 	}
 
 	LoginForm struct {
+		form.Form
 		Email    string
 		Password string
 		Remember string
@@ -39,6 +41,7 @@ type (
 	}
 
 	SignupForm struct {
+		form.Form
 		Email    string
 		Password string
 		Error    struct {
@@ -65,18 +68,20 @@ func newSignupPage() *page.Page {
 	return p
 }
 
-func newLoginForm() LoginForm {
+func newLoginForm(r *http.Request) LoginForm {
 	return LoginForm{
 		Email:    "",
 		Password: "",
-		Remember: "false",
+		Remember: "",
+		Form:     form.NewForm(r),
 	}
 }
 
-func newSignupForm() SignupForm {
+func newSignupForm(r *http.Request) SignupForm {
 	return SignupForm{
 		Email:    "",
 		Password: "",
+		Form:     form.NewForm(r),
 	}
 }
 
@@ -102,18 +107,17 @@ func (h *AuthHandlers) Routes() {
 func (h *AuthHandlers) LoginView(w http.ResponseWriter, r *http.Request) {
 	p := newLoginPage()
 	loginPageData := &LoginPageData{
-		Form: newLoginForm(),
+		Form: newLoginForm(r),
 	}
 	p.Data = loginPageData
 	h.Render(w, p)
 }
 
 func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
-	loginForm := LoginForm{
-		Email:    r.FormValue("email"),
-		Password: r.FormValue("password"),
-		Remember: r.FormValue("remember"),
-	}
+	loginForm := newLoginForm(r)
+	loginForm.Email = r.FormValue("email")
+	loginForm.Password = r.FormValue("password")
+	loginForm.Remember = r.FormValue("remember")
 
 	ctx := r.Context()
 
@@ -153,17 +157,16 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandlers) SignupView(w http.ResponseWriter, r *http.Request) {
 	p := newSignupPage()
 	signupPageData := &SignupPageData{
-		Form: newSignupForm(),
+		Form: newSignupForm(r),
 	}
 	p.Data = signupPageData
 	h.Render(w, p)
 }
 
 func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
-	signupForm := SignupForm{
-		Email:    r.FormValue("email"),
-		Password: r.FormValue("password"),
-	}
+	signupForm := newSignupForm(r)
+	signupForm.Email = r.FormValue("email")
+	signupForm.Password = r.FormValue("password")
 
 	_, err := mail.ParseAddress(signupForm.Email)
 	if err != nil {
@@ -191,11 +194,11 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 	_, err = h.userStore.Create(r.Context(), signupForm.Email, string(passwordHash))
 	if err != nil {
 		signupForm.Error.ErrorMessage = err.Error()
-		log.Printf("failed to create user: %v", err)
+		log.Printf("ERROR: failed to create user: %v", err)
 		h.RenderPartial(w, 422, "signup-form", signupForm)
 		return
 	}
 
-	h.RenderPartial(w, 200, "signup-form", newSignupForm())
+	h.RenderPartial(w, 200, "signup-form", newSignupForm(r))
 	h.RenderPartial(w, 200, "signup-success-message", nil)
 }

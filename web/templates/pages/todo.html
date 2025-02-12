@@ -4,6 +4,7 @@
     <p class="text-red-400 dark:text-red-400">{{ .Error }}</p>
   {{ end }}
 
+  <!--prettier-ignore-->
   {{ if .Data }}
     {{ template "todo-form" .Data.Form }}
     <ul id="todo-list" class="grid grid-cols-3 gap-5" hx-boost="true">

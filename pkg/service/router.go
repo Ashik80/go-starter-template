@@ -3,6 +3,8 @@ package service
 import (
 	"net/http"
 
+	"go-starter-template/pkg/middlewares"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -29,6 +31,7 @@ func NewChiServerMux() *ChiServerMux {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(middlewares.CSRFMiddleware)
 
 	return &ChiServerMux{router: r}
 }

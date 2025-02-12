@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"go-starter-template/ent"
-	"go-starter-template/pkg/middlewares"
 	"go-starter-template/pkg/service"
 	"go-starter-template/pkg/store"
 
@@ -26,7 +25,6 @@ type App struct {
 	Store            *store.Store
 	TemplateRenderer *service.TemplateRenderer
 	server           *http.Server
-	Middleware       *middlewares.Middleware
 }
 
 func Init(ctx context.Context) *App {
@@ -38,14 +36,9 @@ func Init(ctx context.Context) *App {
 	a.initFileServer()
 	a.initTemplatingEngine()
 	a.initStores()
-	a.initMiddlewares()
 	a.initApplicationServer()
 
 	return a
-}
-
-func (a *App) initMiddlewares() {
-	a.Middleware = middlewares.NewMiddleware(a.Store.SessionStore)
 }
 
 func (a *App) initApplicationServer() {

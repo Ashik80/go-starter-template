@@ -1,6 +1,7 @@
 {{ define "login-form" }}
 <form class="mx-auto mb-4" hx-post="/login" hx-swap="outerHTML">
   <div class="mb-5">
+    {{ .CSRF }}
     <label
       for="email"
       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"

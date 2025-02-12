@@ -3,8 +3,9 @@
 <form
   {{ if .Todo }} hx-put="/todos/{{ .Todo.ID }}" hx-swap="outerHTML" {{ end }}
   class="max-w-sm"
-  @submit="isEditMode = false"
+  @close_edit_form="isEditMode = false"
 >
+  {{ .Todo.CSRF }}
   <div class="mb-5">
     <label
       for="message"
