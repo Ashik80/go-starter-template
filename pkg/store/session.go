@@ -37,7 +37,7 @@ func NewEntSessionStore(orm *ent.Client) *EntSessionStore {
 func (s *EntSessionStore) Create(ctx context.Context, user *User, expiresAt time.Time) (*Session, error) {
 	sess, err := s.orm.Session.Create().SetExpiresAt(expiresAt).SetUserID(user.ID).Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create session for user %s: %v\n", user.Email, err)
+		return nil, fmt.Errorf("failed to create session for user %s: %w\n", user.Email, err)
 	}
 	return mapSession(sess), err
 }
@@ -45,7 +45,7 @@ func (s *EntSessionStore) Create(ctx context.Context, user *User, expiresAt time
 func (s *EntSessionStore) Get(ctx context.Context, sessionId string) (*Session, error) {
 	sess, err := s.orm.Session.Get(ctx, uuid.MustParse(sessionId))
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve session: %v\n", err)
+		return nil, fmt.Errorf("failed to retrieve session: %w\n", err)
 	}
 	return mapSession(sess), err
 }
@@ -53,7 +53,7 @@ func (s *EntSessionStore) Get(ctx context.Context, sessionId string) (*Session, 
 func (s *EntSessionStore) GetWithUser(ctx context.Context, sessionId string) (*Session, error) {
 	sess, err := s.orm.Session.Query().Where(session.ID(uuid.MustParse(sessionId))).WithUser().Only(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve session: %v\n", err)
+		return nil, fmt.Errorf("failed to retrieve session: %w\n", err)
 	}
 	mappedSession := mapSession(sess)
 	mappedSession.User = mapUser(sess.Edges.User)

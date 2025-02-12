@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/mail"
@@ -20,6 +22,7 @@ type (
 	AuthHandlers struct {
 		*service.TemplateRenderer
 		service.Router
+		env          string
 		userStore    store.UserStore
 		sessionStore store.SessionStore
 	}
@@ -92,6 +95,7 @@ func init() {
 func (h *AuthHandlers) Init(a *app.App) error {
 	h.Router = a.Router
 	h.userStore = a.Store.UserStore
+	h.env = a.Config.Env
 	h.sessionStore = a.Store.SessionStore
 	h.TemplateRenderer = a.TemplateRenderer
 	return nil
@@ -148,7 +152,7 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 		h.RenderPartial(w, 500, "login-form", loginForm)
 	}
 
-	auth_helpers.SetSessionCookie(w, sess)
+	auth_helpers.SetSessionCookie(w, sess, h.env)
 
 	w.Header().Add("Hx-Location", "/todos")
 	w.WriteHeader(200)
@@ -164,6 +168,7 @@ func (h *AuthHandlers) SignupView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	signupForm := newSignupForm(r)
 	signupForm.Email = r.FormValue("email")
 	signupForm.Password = r.FormValue("password")
@@ -183,6 +188,25 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	user, err := h.userStore.GetByEmail(ctx, signupForm.Email)
+	if err != nil {
+		var notFoundError *store.NotFoundError
+		if !errors.As(err, &notFoundError) {
+			log.Printf("ERROR: %v", err)
+			signupForm.Error.ErrorMessage = err.Error()
+			h.RenderPartial(w, 500, "signup-form", signupForm)
+			return
+		}
+	}
+
+	if user != nil {
+		errorMsg := fmt.Sprintf("user with email %s already exists", signupForm.Email)
+		log.Printf("ERROR: %s", errorMsg)
+		signupForm.Error.ErrorMessage = errorMsg
+		h.RenderPartial(w, http.StatusConflict, "signup-form", signupForm)
+		return
+	}
+
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(signupForm.Password), 10)
 	if err != nil {
 		log.Printf("ERROR: failed to generate password hash: %v\n", err)
@@ -191,7 +215,7 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.userStore.Create(r.Context(), signupForm.Email, string(passwordHash))
+	_, err = h.userStore.Create(ctx, signupForm.Email, string(passwordHash))
 	if err != nil {
 		signupForm.Error.ErrorMessage = err.Error()
 		log.Printf("ERROR: failed to create user: %v", err)
@@ -199,6 +223,7 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.RenderPartial(w, 200, "signup-form", newSignupForm(r))
-	h.RenderPartial(w, 200, "signup-success-message", nil)
+	h.RenderPartial(w, 0, "signup-form", newSignupForm(r))
+	h.RenderPartial(w, 0, "signup-success-message", nil)
+	w.WriteHeader(200)
 }

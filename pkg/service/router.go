@@ -23,7 +23,7 @@ type NetServerMux struct {
 	mws []middlewares.MiddlewareFunc
 }
 
-func NewNetServerMux(config *config.Config) *NetServerMux {
+func NewNetServerMux(conf *config.Config) *NetServerMux {
 	mux := http.NewServeMux()
 	n := &NetServerMux{
 		mux: mux,
@@ -31,8 +31,9 @@ func NewNetServerMux(config *config.Config) *NetServerMux {
 	}
 
 	n.Use(middlewares.Logger)
-	csrfMiddleware := middlewares.CSRFMiddleware(config.CSRFAuthKey)
+	csrfMiddleware := middlewares.CSRFMiddleware(conf.CSRFAuthKey)
 	n.Use(csrfMiddleware)
+	n.Use(middlewares.EnableCors(conf.AllowedOrigins))
 
 	return n
 }

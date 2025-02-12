@@ -9,9 +9,11 @@ import (
 
 type (
 	Config struct {
+		Env            string
 		Port           string
 		CSRFAuthKey    string
 		DatabaseConfig *DatabaseConfig
+		AllowedOrigins string
 	}
 
 	DatabaseConfig struct {
@@ -26,12 +28,14 @@ type (
 
 func NewConfig() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("failed to load .env file %v\n", err)
+		return nil, fmt.Errorf("failed to load .env file %w\n", err)
 	}
 
 	config := &Config{
-		Port:        os.Getenv("PORT"),
-		CSRFAuthKey: os.Getenv("CSRF_AUTH_KEY"),
+		Env:            os.Getenv("ENV"),
+		Port:           os.Getenv("PORT"),
+		CSRFAuthKey:    os.Getenv("CSRF_AUTH_KEY"),
+		AllowedOrigins: os.Getenv("ALLOWED_ORIGINS"),
 		DatabaseConfig: &DatabaseConfig{
 			User:     os.Getenv("DB_USER"),
 			Password: os.Getenv("DB_PASSWORD"),

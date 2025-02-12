@@ -50,43 +50,43 @@ func NewTemplateRenderer(baseTemplateFile, layoutDir, pagesDir, partialsDir stri
 	if err != nil {
 		errorMsg := "failed to parse layouts"
 		log.Printf("ERROR: %s: %v\n", errorMsg, err)
-		return nil, fmt.Errorf("%s: %v", errorMsg, err)
+		return nil, fmt.Errorf("%s: %w\n", errorMsg, err)
 	}
 	if len(layouts) == 0 {
 		errorMsg := fmt.Sprintf("no layout files found in %s", layoutDir)
 		log.Printf("ERROR: %s\n", errorMsg)
-		return nil, fmt.Errorf("%s", errorMsg)
+		return nil, fmt.Errorf("%s\n", errorMsg)
 	}
 
 	pages, err := walkTemplateFiles(pagesDir)
 	if err != nil {
 		errorMsg := "failed to parse pages"
 		log.Printf("ERROR: %s: %v\n", errorMsg, err)
-		return nil, fmt.Errorf("%s: %v", errorMsg, err)
+		return nil, fmt.Errorf("%s: %w\n", errorMsg, err)
 	}
 	if len(pages) == 0 {
 		errorMsg := fmt.Sprintf("no page files found in %s", pagesDir)
 		log.Printf("ERROR: %s\n", errorMsg)
-		return nil, fmt.Errorf("%s", errorMsg)
+		return nil, fmt.Errorf("%s\n", errorMsg)
 	}
 
 	partials, err := walkTemplateFiles(partialsDir)
 	if err != nil {
 		errorMsg := "failed to parse partials"
 		log.Printf("ERROR: %s: %v\n", errorMsg, err)
-		return nil, fmt.Errorf("%s: %v", errorMsg, err)
+		return nil, fmt.Errorf("%s: %w\n", errorMsg, err)
 	}
 	if len(partials) == 0 {
 		errorMsg := fmt.Sprintf("no partial files found in %s", partialsDir)
 		log.Printf("ERROR: %s\n", errorMsg)
-		return nil, fmt.Errorf("%s", errorMsg)
+		return nil, fmt.Errorf("%s\n", errorMsg)
 	}
 
 	partialTmpl, err := template.ParseFiles(partials...)
 	if err != nil {
 		errMsg := "error parsing partials directory"
 		log.Printf("ERROR: %s: %v\n", errMsg, err)
-		return nil, fmt.Errorf("%s: %v", errMsg, err)
+		return nil, fmt.Errorf("%s: %w\n", errMsg, err)
 	}
 
 	for _, layoutFile := range layouts {
@@ -97,7 +97,7 @@ func NewTemplateRenderer(baseTemplateFile, layoutDir, pagesDir, partialsDir stri
 			if err != nil {
 				errorMsg := fmt.Sprintf("failed to parse template %s", key)
 				log.Printf("ERROR: %s: %v\n", errorMsg, err)
-				return nil, fmt.Errorf("%s: %v", errorMsg, err)
+				return nil, fmt.Errorf("%s: %w\n", errorMsg, err)
 			}
 			templates[key] = tmpl
 		}
@@ -116,7 +116,7 @@ func (t *TemplateRenderer) Render(w http.ResponseWriter, p *page.Page) error {
 	if p.Name == "" {
 		errorMsg := "template name is required"
 		log.Printf("ERROR: %s\n", errorMsg)
-		return fmt.Errorf("%s", errorMsg)
+		return fmt.Errorf("%s\n", errorMsg)
 	}
 
 	if p.Layout == "" {
@@ -135,7 +135,7 @@ func (t *TemplateRenderer) Render(w http.ResponseWriter, p *page.Page) error {
 	if !ok {
 		errorMsg := fmt.Sprintf("template not found for key: %s", key)
 		log.Printf("ERROR: %s\n", errorMsg)
-		return fmt.Errorf("%s", errorMsg)
+		return fmt.Errorf("%s\n", errorMsg)
 	}
 
 	return tmpl.ExecuteTemplate(w, "base", p)
@@ -156,7 +156,7 @@ func (t *TemplateRenderer) RenderString(w http.ResponseWriter, statusCode int, h
 	if err != nil {
 		errorMsg := "failed to parse string"
 		log.Printf("ERROR: %s\n", errorMsg)
-		return fmt.Errorf("%s", errorMsg)
+		return fmt.Errorf("%s\n", errorMsg)
 	}
 	return tmpl.Execute(w, data)
 }

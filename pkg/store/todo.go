@@ -51,7 +51,7 @@ func NewTodoCreateDto(title string) *TodoCreateDto {
 func (t *EntTodoStore) List(ctx context.Context) ([]*Todo, error) {
 	todos, err := t.orm.Todo.Query().Order(todo.ByID()).All(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get todos: %v", err)
+		return nil, fmt.Errorf("failed to get todos: %w\n", err)
 	}
 	return mapTodos(todos), nil
 }
@@ -59,7 +59,7 @@ func (t *EntTodoStore) List(ctx context.Context) ([]*Todo, error) {
 func (t *EntTodoStore) Get(ctx context.Context, id int) (*Todo, error) {
 	todo, err := t.orm.Todo.Get(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get todo: %v", err)
+		return nil, fmt.Errorf("failed to get todo: %w\n", err)
 	}
 	return mapTodo(todo), nil
 }
@@ -73,7 +73,7 @@ func (t *EntTodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*Tod
 
 	todo, err := query.Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create todos: %v", err)
+		return nil, fmt.Errorf("failed to create todos: %w\n", err)
 	}
 	return mapTodo(todo), nil
 }
@@ -87,14 +87,14 @@ func (t *EntTodoStore) Update(ctx context.Context, todo *Todo, todoDto TodoCreat
 
 	updatedTodo, err := query.Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update todo: %v", err)
+		return nil, fmt.Errorf("failed to update todo: %w\n", err)
 	}
 	return mapTodo(updatedTodo), nil
 }
 
 func (t *EntTodoStore) Delete(ctx context.Context, todo *Todo) error {
 	if err := t.orm.Todo.DeleteOneID(todo.ID).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to delete todo: %v", err)
+		return fmt.Errorf("failed to delete todo: %w\n", err)
 	}
 	return nil
 }

@@ -50,14 +50,19 @@ func IsStrongPassword(password string) []string {
 	return errors
 }
 
-func SetSessionCookie(w http.ResponseWriter, session *store.Session) {
+func SetSessionCookie(w http.ResponseWriter, session *store.Session, env string) {
+	secure := true
+	if env == "development" {
+		secure = false
+	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session_id",
 		Value:    session.ID.String(),
 		Path:     "/",
 		Expires:  session.ExpiresAt,
 		HttpOnly: true,
-		Secure:   false, // TODO: change in prod
+		Secure:   secure,
 		SameSite: http.SameSiteStrictMode,
 	})
 }

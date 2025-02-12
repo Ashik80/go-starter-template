@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -37,7 +38,7 @@ func (s *EntUserStore) Create(ctx context.Context, email string, passwordHash st
 	query := s.orm.User.Create().SetEmail(email).SetPassword(passwordHash)
 	user, err := query.Save(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create user: %v\n", err)
+		return nil, fmt.Errorf("failed to create user: %w\n", err)
 	}
 	return mapUser(user), nil
 }
@@ -46,7 +47,12 @@ func (s *EntUserStore) GetByEmail(ctx context.Context, email string) (*User, err
 	query := s.orm.User.Query().Where(user.Email(email))
 	user, err := query.First(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find user with email %s: %v\n", email, err)
+		errorMsg := fmt.Sprintf("failed to get user with email %s", email)
+		var notFoundError *ent.NotFoundError
+		if errors.As(err, &notFoundError) {
+			return nil, fmt.Errorf("%s: %w\n", errorMsg, newNotFoundError("user"))
+		}
+		return nil, fmt.Errorf("%s: %w\n", errorMsg, err)
 	}
 	return mapUser(user), nil
 }
