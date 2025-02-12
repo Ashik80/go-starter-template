@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go-starter-template/ent"
+	"go-starter-template/pkg/config"
 	"go-starter-template/pkg/service"
 	"go-starter-template/pkg/store"
 
@@ -20,6 +21,7 @@ import (
 )
 
 type App struct {
+	Config           *config.Config
 	Router           service.Router
 	Orm              *ent.Client
 	Store            *store.Store
@@ -30,6 +32,7 @@ type App struct {
 func Init(ctx context.Context) *App {
 	a := new(App)
 
+	a.initConfig()
 	a.initOrm()
 	// a.autoMigrateSchema(ctx)
 	a.initRouterMux()
@@ -41,10 +44,16 @@ func Init(ctx context.Context) *App {
 	return a
 }
 
+func (a *App) initConfig() {
+	conf, err := config.NewConfig()
+	if err != nil {
+		log.Fatalf("ERROR: %v", err)
+	}
+	a.Config = conf
+}
+
 func (a *App) initApplicationServer() {
-	host := "localhost"
-	port := "8000"
-	addr := fmt.Sprintf("%s:%s", host, port)
+	addr := fmt.Sprintf(":%s", a.Config.Port)
 	server := http.Server{
 		Addr:    addr,
 		Handler: a.Router,
@@ -59,12 +68,20 @@ func (a *App) initFileServer() {
 }
 
 func (a *App) initRouterMux() {
-	a.Router = service.NewNetServerMux()
+	a.Router = service.NewNetServerMux(a.Config)
 	log.Println("INFO: router initialized")
 }
 
 func (a *App) initOrm() {
-	drv, err := entsql.Open(dialect.Postgres, "postgresql://postgres:postgres@localhost:5432/test_temp")
+	dsn := fmt.Sprintf(
+		"postgresql://%s:%s@%s:%s/%s",
+		a.Config.DatabaseConfig.User,
+		a.Config.DatabaseConfig.Password,
+		a.Config.DatabaseConfig.Host,
+		a.Config.DatabaseConfig.Port,
+		a.Config.DatabaseConfig.Name,
+	)
+	drv, err := entsql.Open(dialect.Postgres, dsn)
 	if err != nil {
 		log.Fatalf("ERROR: failed to open database: %v", err)
 	}

@@ -3,6 +3,7 @@ package service
 import (
 	"net/http"
 
+	"go-starter-template/pkg/config"
 	"go-starter-template/pkg/middlewares"
 )
 
@@ -22,7 +23,7 @@ type NetServerMux struct {
 	mws []middlewares.MiddlewareFunc
 }
 
-func NewNetServerMux() *NetServerMux {
+func NewNetServerMux(config *config.Config) *NetServerMux {
 	mux := http.NewServeMux()
 	n := &NetServerMux{
 		mux: mux,
@@ -30,7 +31,8 @@ func NewNetServerMux() *NetServerMux {
 	}
 
 	n.Use(middlewares.Logger)
-	n.Use(middlewares.CSRFMiddleware)
+	csrfMiddleware := middlewares.CSRFMiddleware(config.CSRFAuthKey)
+	n.Use(csrfMiddleware)
 
 	return n
 }
