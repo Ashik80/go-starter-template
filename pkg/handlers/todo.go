@@ -200,7 +200,8 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	if title == "" {
 		form.Error = "Title cannot be empty"
-		t.RenderPartial(w, http.StatusBadRequest, "todo-form", form)
+		w.WriteHeader(400)
+		t.RenderPartial(w, "todo-form", form)
 		return
 	}
 
@@ -209,14 +210,18 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 	todo, err := t.todoStore.Create(r.Context(), todoDto)
 	if err != nil {
 		form.Error = err.Error()
-		t.RenderPartial(w, http.StatusBadRequest, "todo-form", form)
+		w.WriteHeader(400)
+		t.RenderPartial(w, "todo-form", form)
 		return
 	}
 
-	form.Title = ""
-	form.Description = ""
-	t.RenderPartial(w, http.StatusOK, "todo-form", form)
-	t.RenderPartial(w, http.StatusOK, "todo-item-oob", todo)
+	// form.Title = ""
+	// form.Description = ""
+	form = newTodoForm(r)
+
+	w.WriteHeader(200)
+	t.RenderPartial(w, "todo-form", form)
+	t.RenderPartial(w, "todo-item-oob", todo)
 }
 
 func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -263,14 +268,16 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	todo, err := t.todoStore.Get(ctx, id)
 	if err != nil {
 		todoData.Error = err.Error()
-		t.RenderPartial(w, http.StatusBadRequest, "todo-details-edit-form", todoData)
+		w.WriteHeader(400)
+		t.RenderPartial(w, "todo-details-edit-form", todoData)
 		return
 	}
 
 	todo, err = t.todoStore.Update(ctx, todo, todoDto)
 	if err != nil {
 		todoData.Error = err.Error()
-		t.RenderPartial(w, http.StatusBadRequest, "todo-details-edit-form", todoData)
+		w.WriteHeader(400)
+		t.RenderPartial(w, "todo-details-edit-form", todoData)
 		return
 	}
 
@@ -285,8 +292,9 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Add("Hx-Trigger", "close_edit_form")
 	w.WriteHeader(http.StatusOK)
-	t.RenderPartial(w, 0, "todo-details-info-oob", todoData.Todo)
-	t.RenderPartial(w, 0, "todo-details-edit-form", todoData)
+
+	t.RenderPartial(w, "todo-details-info-oob", todoData.Todo)
+	t.RenderPartial(w, "todo-details-edit-form", todoData)
 }
 
 func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -316,13 +324,15 @@ func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	todo, err := t.todoStore.Get(ctx, id)
 	if err != nil {
 		tmplString := fmt.Sprintf("<p style='color: red;'>Not found</p>")
-		t.RenderString(w, http.StatusNotFound, tmplString, nil)
+		w.WriteHeader(404)
+		t.RenderString(w, tmplString, nil)
 		return
 	}
 
 	if err = t.todoStore.Delete(ctx, todo); err != nil {
 		tmplString := fmt.Sprintf("<p style='color: red;'>%s</p>", err.Error())
-		t.RenderString(w, http.StatusBadRequest, tmplString, nil)
+		w.WriteHeader(400)
+		t.RenderString(w, tmplString, nil)
 		return
 	}
 

@@ -141,17 +141,13 @@ func (t *TemplateRenderer) Render(w http.ResponseWriter, p *page.Page) error {
 	return tmpl.ExecuteTemplate(w, "base", p)
 }
 
-func (t *TemplateRenderer) RenderPartial(w http.ResponseWriter, statusCode int, partial string, data any) error {
+func (t *TemplateRenderer) RenderPartial(w http.ResponseWriter, partial string, data any) error {
 	w.Header().Add("Content-Type", "text/html")
-	if statusCode != 0 {
-		w.WriteHeader(statusCode)
-	}
 	return t.partials.ExecuteTemplate(w, partial, data)
 }
 
-func (t *TemplateRenderer) RenderString(w http.ResponseWriter, statusCode int, html string, data any) error {
+func (t *TemplateRenderer) RenderString(w http.ResponseWriter, html string, data any) error {
 	w.Header().Add("Content-Type", "text/html")
-	w.WriteHeader(statusCode)
 	tmpl, err := template.New("").Parse(html)
 	if err != nil {
 		errorMsg := "failed to parse string"

@@ -25,10 +25,10 @@ db-upgrade:
 db-downgrade:
 	@GOOSE_DRIVER="$(dbDriver)" GOOSE_DBSTRING="$(dsn)" goose down -dir $(migrationsDir)
 
-build-tailwind-dev:
+tailwind-build-dev:
 	@npx @tailwindcss/cli -i ./web/css/styles.css -o ./web/css/output.css --watch
 
-build-tailwind:
+tailwind-build:
 	@npx @tailwindcss/cli -i ./web/css/styles.css -o ./web/css/output.css
 
 build:

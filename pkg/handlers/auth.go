@@ -128,13 +128,15 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 	user, err := h.userStore.GetByEmail(ctx, loginForm.Email)
 	if err != nil {
 		loginForm.Error = "Invalid credentials"
-		h.RenderPartial(w, 401, "login-form", loginForm)
+		w.WriteHeader(401)
+		h.RenderPartial(w, "login-form", loginForm)
 		return
 	}
 
 	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginForm.Password)); err != nil {
 		loginForm.Error = "Invalid credentials"
-		h.RenderPartial(w, 401, "login-form", loginForm)
+		w.WriteHeader(401)
+		h.RenderPartial(w, "login-form", loginForm)
 		return
 	}
 
@@ -149,7 +151,8 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("ERROR: %v", err)
 		loginForm.Error = "Something went wrong"
-		h.RenderPartial(w, 500, "login-form", loginForm)
+		w.WriteHeader(500)
+		h.RenderPartial(w, "login-form", loginForm)
 	}
 
 	auth_helpers.SetSessionCookie(w, sess, h.env)
@@ -176,7 +179,8 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 	_, err := mail.ParseAddress(signupForm.Email)
 	if err != nil {
 		signupForm.Error.Email = "Invalid email"
-		h.RenderPartial(w, 400, "signup-form", signupForm)
+		w.WriteHeader(400)
+		h.RenderPartial(w, "signup-form", signupForm)
 		return
 	}
 
@@ -184,7 +188,8 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 	if len(validationErrors) > 0 {
 		signupForm.Error.Password.Validations = validationErrors
 		signupForm.Error.ErrorMessage = "Password must have minimum lenght of 8 characters and must contain at least 1 uppercase letter, 1 lowercase letter, 1 digit and 1 symbol"
-		h.RenderPartial(w, 400, "signup-form", signupForm)
+		w.WriteHeader(400)
+		h.RenderPartial(w, "signup-form", signupForm)
 		return
 	}
 
@@ -194,7 +199,8 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 		if !errors.As(err, &notFoundError) {
 			log.Printf("ERROR: %v", err)
 			signupForm.Error.ErrorMessage = err.Error()
-			h.RenderPartial(w, 500, "signup-form", signupForm)
+			w.WriteHeader(500)
+			h.RenderPartial(w, "signup-form", signupForm)
 			return
 		}
 	}
@@ -203,7 +209,8 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 		errorMsg := fmt.Sprintf("user with email %s already exists", signupForm.Email)
 		log.Printf("ERROR: %s", errorMsg)
 		signupForm.Error.ErrorMessage = errorMsg
-		h.RenderPartial(w, http.StatusConflict, "signup-form", signupForm)
+		w.WriteHeader(http.StatusConflict)
+		h.RenderPartial(w, "signup-form", signupForm)
 		return
 	}
 
@@ -211,7 +218,8 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("ERROR: failed to generate password hash: %v\n", err)
 		signupForm.Error.ErrorMessage = "failed to generate password hash"
-		h.RenderPartial(w, 500, "signup-form", signupForm)
+		w.WriteHeader(500)
+		h.RenderPartial(w, "signup-form", signupForm)
 		return
 	}
 
@@ -219,11 +227,12 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		signupForm.Error.ErrorMessage = err.Error()
 		log.Printf("ERROR: failed to create user: %v", err)
-		h.RenderPartial(w, 422, "signup-form", signupForm)
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		h.RenderPartial(w, "signup-form", signupForm)
 		return
 	}
 
-	h.RenderPartial(w, 0, "signup-form", newSignupForm(r))
-	h.RenderPartial(w, 0, "signup-success-message", nil)
 	w.WriteHeader(200)
+	h.RenderPartial(w, "signup-form", newSignupForm(r))
+	h.RenderPartial(w, "signup-success-message", nil)
 }
