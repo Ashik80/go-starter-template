@@ -3,82 +3,21 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"go-starter-template/pkg/app"
-	"go-starter-template/pkg/form"
+	"go-starter-template/pkg/helpers/todo_helpers"
 	"go-starter-template/pkg/middlewares"
 	"go-starter-template/pkg/page"
 	"go-starter-template/pkg/service"
 	"go-starter-template/pkg/store"
 )
 
-type (
-	TodoHandler struct {
-		service.Router
-		*service.TemplateRenderer
-		todoStore      store.TodoStore
-		authMiddleware middlewares.MiddlewareFunc
-	}
-
-	TodoForm struct {
-		form.Form
-		Title       string
-		Description string
-		Error       string
-	}
-
-	TodoListData struct {
-		Todos []*store.Todo
-		Form  *TodoForm
-	}
-
-	TodoData struct {
-		Todo struct {
-			form.Form
-			ID          int
-			Title       string
-			Description string
-			CreatedAt   string
-			UpdatedAt   string
-		}
-		Error string
-	}
-)
-
-func newTodoForm(r *http.Request) *TodoForm {
-	return &TodoForm{
-		Title:       "",
-		Description: "",
-		Error:       "",
-		Form:        form.NewForm(r),
-	}
-}
-
-func newTodoListData() *TodoListData {
-	return &TodoListData{}
-}
-
-func newTodoData(r *http.Request) *TodoData {
-	t := new(TodoData)
-	t.Todo.Form = form.NewForm(r)
-	return t
-}
-
-func newTodoListPage(t *TodoListData) *page.Page {
-	p := page.New()
-	p.Title = "Todos"
-	p.Name = "todo"
-	p.Path = "/todos"
-	p.Data = t
-	return p
-}
-
-func newTodoPage(t *TodoData) *page.Page {
-	p := page.New()
-	p.Title = "Todo Details"
-	p.Name = "todo-details"
-	p.Data = t
-	return p
+type TodoHandler struct {
+	service.Router
+	*service.TemplateRenderer
+	todoStore      store.TodoStore
+	authMiddleware middlewares.MiddlewareFunc
 }
 
 func init() {
@@ -116,10 +55,10 @@ func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todoData := newTodoListData()
-	p := newTodoListPage(todoData)
+	todoData := page.NewTodoListPageData(r)
+	p := page.NewTodoListPage()
 
-	todoData.Form = newTodoForm(r)
+	p.Data = todoData
 
 	if err != nil {
 		p.Error = err.Error()
@@ -128,6 +67,7 @@ func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	todoData.Todos = todos
+
 	t.Render(w, p)
 }
 
@@ -150,30 +90,23 @@ func (t *TodoHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todoData := newTodoData(r)
-	p := newTodoPage(todoData)
+	p := page.NewTodoPage(r)
 
 	todo, err := t.todoStore.Get(r.Context(), id)
 	if err != nil {
 		p.Error = err.Error()
-		p.StatusCode = http.StatusNotFound
+		w.WriteHeader(404)
 		t.Render(w, p)
 	}
 
-	createdAt := todo.CreatedAt.Format("January 2, 2006 - 3:04PM")
-	updatedAt := todo.UpdatedAt.Format("January 2, 2006 - 3:04PM")
-
-	todoData.Todo.ID = todo.ID
-	todoData.Todo.Title = todo.Title
-	todoData.Todo.Description = todo.Description
-	todoData.Todo.CreatedAt = createdAt
-	todoData.Todo.UpdatedAt = updatedAt
+	todoData := page.NewTodoPageData(r, todo)
+	p.Data = todoData
 
 	t.Render(w, p)
 }
 
 func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
-	todoDto := new(store.TodoCreateDto)
+	var todoDto store.TodoCreateDto
 
 	if t.Wants(r, "application/json") {
 		err := parseJson(r, &todoDto)
@@ -182,7 +115,7 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		todo, err := t.todoStore.Create(r.Context(), todoDto)
+		todo, err := t.todoStore.Create(r.Context(), &todoDto)
 		if err != nil {
 			jsonErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -194,12 +127,13 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	title := r.FormValue("title")
 	description := r.FormValue("description")
-	form := newTodoForm(r)
+
+	form := page.NewTodoForm(r)
 	form.Title = title
 	form.Description = description
 
-	if title == "" {
-		form.Error = "Title cannot be empty"
+	if ok, err := todo_helpers.ValidateTodoForm(form); !ok {
+		form.Error = strings.Join(err, ", ")
 		w.WriteHeader(400)
 		t.RenderPartial(w, "todo-form", form)
 		return
@@ -207,7 +141,8 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	todoDto.Title = title
 	todoDto.Description = description
-	todo, err := t.todoStore.Create(r.Context(), todoDto)
+
+	todo, err := t.todoStore.Create(r.Context(), &todoDto)
 	if err != nil {
 		form.Error = err.Error()
 		w.WriteHeader(400)
@@ -215,12 +150,8 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// form.Title = ""
-	// form.Description = ""
-	form = newTodoForm(r)
-
 	w.WriteHeader(200)
-	t.RenderPartial(w, "todo-form", form)
+	t.RenderPartial(w, "todo-form", page.NewTodoForm(r))
 	t.RenderPartial(w, "todo-item-oob", todo)
 }
 
@@ -247,7 +178,7 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		todo, err = t.todoStore.Update(ctx, todo, todoDto)
+		todo, err = t.todoStore.Update(ctx, todo, &todoDto)
 		if err != nil {
 			jsonErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
@@ -257,44 +188,35 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todoData := newTodoData(r)
-	todoData.Todo.ID = id
-	todoData.Todo.Title = r.FormValue("title")
-	todoData.Todo.Description = r.FormValue("description")
-
-	todoDto.Title = todoData.Todo.Title
-	todoDto.Description = todoData.Todo.Description
-
 	todo, err := t.todoStore.Get(ctx, id)
 	if err != nil {
-		todoData.Error = err.Error()
+		todoForm := page.NewTodoEditForm(r, nil)
+		todoForm.Error = err.Error()
 		w.WriteHeader(400)
-		t.RenderPartial(w, "todo-details-edit-form", todoData)
+		t.RenderPartial(w, "todo-details-edit-form", todoForm)
 		return
 	}
 
-	todo, err = t.todoStore.Update(ctx, todo, todoDto)
+	todo.Title = r.FormValue("title")
+	todo.Description = r.FormValue("description")
+
+	todoForm := page.NewTodoEditForm(r, todo)
+	todoDto.Title = todoForm.Title
+	todoDto.Description = todoForm.Description
+
+	todo, err = t.todoStore.Update(ctx, todo, &todoDto)
 	if err != nil {
-		todoData.Error = err.Error()
+		todoForm.Error = err.Error()
 		w.WriteHeader(400)
-		t.RenderPartial(w, "todo-details-edit-form", todoData)
+		t.RenderPartial(w, "todo-details-edit-form", todoForm)
 		return
 	}
-
-	todoData.Todo.Title = todo.Title
-	todoData.Todo.Description = todo.Description
-
-	createdAt := todo.CreatedAt.Format("January 2, 2006 - 3:04PM")
-	updatedAt := todo.UpdatedAt.Format("January 2, 2006 - 3:04PM")
-
-	todoData.Todo.CreatedAt = createdAt
-	todoData.Todo.UpdatedAt = updatedAt
 
 	w.Header().Add("Hx-Trigger", "close_edit_form")
 	w.WriteHeader(http.StatusOK)
 
-	t.RenderPartial(w, "todo-details-info-oob", todoData.Todo)
-	t.RenderPartial(w, "todo-details-edit-form", todoData)
+	t.RenderPartial(w, "todo-details-info-oob", todo)
+	t.RenderPartial(w, "todo-details-edit-form", page.NewTodoEditForm(r, todo))
 }
 
 func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -321,20 +243,33 @@ func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	p := page.NewTodoPage(r)
+	templateKey := fmt.Sprintf("%s:%s", p.Layout, p.Name)
+
+	tmpl, err := t.GetTemplate(templateKey)
+	if err != nil {
+		w.WriteHeader(500)
+		t.RenderString(w, err.Error(), nil)
+		return
+	}
+
 	todo, err := t.todoStore.Get(ctx, id)
 	if err != nil {
-		tmplString := fmt.Sprintf("<p style='color: red;'>Not found</p>")
 		w.WriteHeader(404)
-		t.RenderString(w, tmplString, nil)
+		w.Header().Add("Hx-Location", "/todos")
 		return
 	}
+
+	deleteForm := page.NewDeleteForm(r, todo)
 
 	if err = t.todoStore.Delete(ctx, todo); err != nil {
-		tmplString := fmt.Sprintf("<p style='color: red;'>%s</p>", err.Error())
-		w.WriteHeader(400)
+		w.WriteHeader(500)
+		tmplString := fmt.Sprintf("<div id=\"error-message\" hx-swap-oob=\"true\"><p style='color: red;'>%s</p></div>", err.Error())
+		tmpl.ExecuteTemplate(w, "todo-delete-form", deleteForm)
 		t.RenderString(w, tmplString, nil)
 		return
 	}
 
+	w.WriteHeader(http.StatusNoContent)
 	w.Header().Add("Hx-Location", "/todos")
 }

@@ -38,7 +38,7 @@ func getTemplateKey(layoutPath, pagePath string) string {
 
 	relPath := strings.TrimSuffix(pagePath, ".html")
 	parts := strings.Split(relPath, string(os.PathSeparator))
-	pageName := strings.Join(parts[2:], ":")
+	pageName := strings.Join(parts[3:], ":")
 
 	return fmt.Sprintf("%s:%s", layoutName, pageName)
 }
@@ -123,14 +123,9 @@ func (t *TemplateRenderer) Render(w http.ResponseWriter, p *page.Page) error {
 		p.Layout = "main"
 	}
 
-	if p.StatusCode == 0 {
-		p.StatusCode = http.StatusOK
-	}
-
 	w.Header().Add("Content-Type", "text/html")
-	w.WriteHeader(p.StatusCode)
 
-	key := fmt.Sprintf("%s:pages:%s", p.Layout, p.Name)
+	key := fmt.Sprintf("%s:%s", p.Layout, p.Name)
 	tmpl, ok := t.templates[key]
 	if !ok {
 		errorMsg := fmt.Sprintf("template not found for key: %s", key)
@@ -155,4 +150,18 @@ func (t *TemplateRenderer) RenderString(w http.ResponseWriter, html string, data
 		return fmt.Errorf("%s\n", errorMsg)
 	}
 	return tmpl.Execute(w, data)
+}
+
+func (t *TemplateRenderer) GetTemplate(key string) (*template.Template, error) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	temp, ok := t.templates[key]
+	if !ok {
+		errorMsg := fmt.Sprintf("template not found for key: %s", key)
+		log.Printf("ERROR: %s\n", errorMsg)
+		return nil, fmt.Errorf("%s\n", errorMsg)
+	}
+
+	return temp, nil
 }

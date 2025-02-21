@@ -8,19 +8,9 @@ import (
 	"go-starter-template/pkg/service"
 )
 
-type (
-	HomeHandler struct {
-		*service.TemplateRenderer
-		service.Router
-	}
-)
-
-func newHomePage() *page.Page {
-	p := page.New()
-	p.Title = "Home"
-	p.Name = "home"
-	p.Path = "/"
-	return p
+type HomeHandler struct {
+	*service.TemplateRenderer
+	service.Router
 }
 
 func init() {
@@ -38,7 +28,6 @@ func (h *HomeHandler) Routes() {
 }
 
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
-	p := newHomePage()
-
+	p := page.NewHomePage()
 	h.Render(w, p)
 }

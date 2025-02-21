@@ -27,6 +27,7 @@ type App struct {
 	Store            *store.Store
 	TemplateRenderer *service.TemplateRenderer
 	server           *http.Server
+	PasswordHasher   service.PasswordHasher
 }
 
 func Init(ctx context.Context) *App {
@@ -39,9 +40,14 @@ func Init(ctx context.Context) *App {
 	a.initFileServer()
 	a.initTemplatingEngine()
 	a.initStores()
+	a.initPasswordHasher()
 	a.initApplicationServer()
 
 	return a
+}
+
+func (a *App) initPasswordHasher() {
+	a.PasswordHasher = service.NewBcryptPasswordHasher()
 }
 
 func (a *App) initConfig() {

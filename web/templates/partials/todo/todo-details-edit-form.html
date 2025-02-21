@@ -1,11 +1,12 @@
 {{ define "todo-details-edit-form" }}
 <!--prettier-ignore-->
 <form
-  {{ if .Todo }} hx-put="/todos/{{ .Todo.ID }}" hx-swap="outerHTML" {{ end }}
+  hx-put="/todos/{{ .ID }}"
+  hx-swap="outerHTML"
   class="max-w-sm"
   @close_edit_form="isEditMode = false"
 >
-  {{ .Todo.CSRF }}
+  {{ .CSRF }}
   <div class="mb-5">
     <label
       for="message"
@@ -17,7 +18,7 @@
       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
       placeholder="Title"
       required
-      {{ if .Todo.Title }} value="{{ .Todo.Title }}" {{ end }}
+      {{ if .Title }} value="{{ .Title }}" {{ end }}
       autocomplete="off"
     />
   </div>
@@ -34,7 +35,7 @@
       placeholder="Leave a description..."
       name="description"
       autocomplete="off"
-    >{{ if .Todo.Description }}{{ .Todo.Description }}{{ end }}</textarea>
+    >{{ if .Description }}{{ .Description }}{{ end }}</textarea>
   </div>
   {{ if .Error }}
   <p class="text-sm text-red-600 dark:text-red-500 mb-5">{{ .Error }}</p>

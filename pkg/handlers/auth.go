@@ -3,89 +3,24 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"net/mail"
 	"time"
 
 	"go-starter-template/pkg/app"
-	"go-starter-template/pkg/form"
 	"go-starter-template/pkg/helpers/auth_helpers"
 	"go-starter-template/pkg/page"
 	"go-starter-template/pkg/service"
 	"go-starter-template/pkg/store"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
-type (
-	AuthHandlers struct {
-		*service.TemplateRenderer
-		service.Router
-		env          string
-		userStore    store.UserStore
-		sessionStore store.SessionStore
-	}
-
-	LoginPageData struct {
-		Form LoginForm
-	}
-
-	SignupPageData struct {
-		Form SignupForm
-	}
-
-	LoginForm struct {
-		form.Form
-		Email    string
-		Password string
-		Remember string
-		Error    string
-	}
-
-	SignupForm struct {
-		form.Form
-		Email    string
-		Password string
-		Error    struct {
-			Email    string
-			Password struct {
-				Validations []string
-			}
-			ErrorMessage string
-		}
-	}
-)
-
-func newLoginPage() *page.Page {
-	p := page.New()
-	p.Layout = "auth"
-	p.Name = "login"
-	return p
-}
-
-func newSignupPage() *page.Page {
-	p := page.New()
-	p.Layout = "auth"
-	p.Name = "signup"
-	return p
-}
-
-func newLoginForm(r *http.Request) LoginForm {
-	return LoginForm{
-		Email:    "",
-		Password: "",
-		Remember: "",
-		Form:     form.NewForm(r),
-	}
-}
-
-func newSignupForm(r *http.Request) SignupForm {
-	return SignupForm{
-		Email:    "",
-		Password: "",
-		Form:     form.NewForm(r),
-	}
+type AuthHandlers struct {
+	*service.TemplateRenderer
+	service.Router
+	env            string
+	userStore      store.UserStore
+	sessionStore   store.SessionStore
+	passwordHasher service.PasswordHasher
 }
 
 func init() {
@@ -98,6 +33,7 @@ func (h *AuthHandlers) Init(a *app.App) error {
 	h.env = a.Config.Env
 	h.sessionStore = a.Store.SessionStore
 	h.TemplateRenderer = a.TemplateRenderer
+	h.passwordHasher = a.PasswordHasher
 	return nil
 }
 
@@ -109,16 +45,13 @@ func (h *AuthHandlers) Routes() {
 }
 
 func (h *AuthHandlers) LoginView(w http.ResponseWriter, r *http.Request) {
-	p := newLoginPage()
-	loginPageData := &LoginPageData{
-		Form: newLoginForm(r),
-	}
-	p.Data = loginPageData
+	p := page.NewLoginPage()
+	p.Data = page.NewLoginPageData(r)
 	h.Render(w, p)
 }
 
 func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
-	loginForm := newLoginForm(r)
+	loginForm := page.NewLoginForm(r)
 	loginForm.Email = r.FormValue("email")
 	loginForm.Password = r.FormValue("password")
 	loginForm.Remember = r.FormValue("remember")
@@ -133,7 +66,7 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginForm.Password)); err != nil {
+	if err = h.passwordHasher.CompareHashAndPassword(user.Password, loginForm.Password); err != nil {
 		loginForm.Error = "Invalid credentials"
 		w.WriteHeader(401)
 		h.RenderPartial(w, "login-form", loginForm)
@@ -149,8 +82,7 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 
 	sess, err := h.sessionStore.Create(ctx, user, sessionExpiry)
 	if err != nil {
-		log.Printf("ERROR: %v", err)
-		loginForm.Error = "Something went wrong"
+		loginForm.Error = err.Error()
 		w.WriteHeader(500)
 		h.RenderPartial(w, "login-form", loginForm)
 	}
@@ -162,17 +94,14 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandlers) SignupView(w http.ResponseWriter, r *http.Request) {
-	p := newSignupPage()
-	signupPageData := &SignupPageData{
-		Form: newSignupForm(r),
-	}
-	p.Data = signupPageData
+	p := page.NewSignupPage()
+	p.Data = page.NewSignupPageData(r)
 	h.Render(w, p)
 }
 
 func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	signupForm := newSignupForm(r)
+	signupForm := page.NewSignupForm(r)
 	signupForm.Email = r.FormValue("email")
 	signupForm.Password = r.FormValue("password")
 
@@ -197,7 +126,6 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		var notFoundError *store.NotFoundError
 		if !errors.As(err, &notFoundError) {
-			log.Printf("ERROR: %v", err)
 			signupForm.Error.ErrorMessage = err.Error()
 			w.WriteHeader(500)
 			h.RenderPartial(w, "signup-form", signupForm)
@@ -207,16 +135,14 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 
 	if user != nil {
 		errorMsg := fmt.Sprintf("user with email %s already exists", signupForm.Email)
-		log.Printf("ERROR: %s", errorMsg)
 		signupForm.Error.ErrorMessage = errorMsg
 		w.WriteHeader(http.StatusConflict)
 		h.RenderPartial(w, "signup-form", signupForm)
 		return
 	}
 
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(signupForm.Password), 10)
+	passwordHash, err := h.passwordHasher.GenerateFromPassword(signupForm.Password, 10)
 	if err != nil {
-		log.Printf("ERROR: failed to generate password hash: %v\n", err)
 		signupForm.Error.ErrorMessage = "failed to generate password hash"
 		w.WriteHeader(500)
 		h.RenderPartial(w, "signup-form", signupForm)
@@ -226,13 +152,12 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 	_, err = h.userStore.Create(ctx, signupForm.Email, string(passwordHash))
 	if err != nil {
 		signupForm.Error.ErrorMessage = err.Error()
-		log.Printf("ERROR: failed to create user: %v", err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		h.RenderPartial(w, "signup-form", signupForm)
 		return
 	}
 
 	w.WriteHeader(200)
-	h.RenderPartial(w, "signup-form", newSignupForm(r))
+	h.RenderPartial(w, "signup-form", page.NewSignupForm(r))
 	h.RenderPartial(w, "signup-success-message", nil)
 }

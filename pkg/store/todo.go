@@ -22,7 +22,7 @@ type (
 		List(ctx context.Context) ([]*Todo, error)
 		Get(ctx context.Context, id int) (*Todo, error)
 		Create(ctx context.Context, todoDto *TodoCreateDto) (*Todo, error)
-		Update(ctx context.Context, todo *Todo, todoDto TodoCreateDto) (*Todo, error)
+		Update(ctx context.Context, todo *Todo, todoDto *TodoCreateDto) (*Todo, error)
 		Delete(ctx context.Context, todo *Todo) error
 	}
 )
@@ -78,7 +78,7 @@ func (t *EntTodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*Tod
 	return mapTodo(todo), nil
 }
 
-func (t *EntTodoStore) Update(ctx context.Context, todo *Todo, todoDto TodoCreateDto) (*Todo, error) {
+func (t *EntTodoStore) Update(ctx context.Context, todo *Todo, todoDto *TodoCreateDto) (*Todo, error) {
 	query := t.orm.Todo.UpdateOneID(todo.ID).SetTitle(todoDto.Title)
 
 	if todoDto.Description != "" {
