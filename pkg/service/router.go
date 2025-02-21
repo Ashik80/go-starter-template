@@ -3,7 +3,6 @@ package service
 import (
 	"net/http"
 
-	"go-starter-template/pkg/config"
 	"go-starter-template/pkg/middlewares"
 )
 
@@ -23,7 +22,7 @@ type NetServerMux struct {
 	mws []middlewares.MiddlewareFunc
 }
 
-func NewNetServerMux(conf *config.Config) *NetServerMux {
+func NewNetServerMux(conf *Config) *NetServerMux {
 	mux := http.NewServeMux()
 	n := &NetServerMux{
 		mux: mux,

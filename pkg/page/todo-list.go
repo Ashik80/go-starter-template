@@ -1,13 +1,13 @@
 package page
 
 import (
+	"go-starter-template/pkg/entity"
 	"go-starter-template/pkg/form"
-	"go-starter-template/pkg/store"
 	"net/http"
 )
 
 type TodoListPageData struct {
-	Todos []*store.Todo
+	Todos []*entity.Todo
 	Form  *TodoCreateForm
 }
 
@@ -38,7 +38,7 @@ func NewTodoForm(r *http.Request) *TodoCreateForm {
 
 func NewTodoListPageData(r *http.Request) *TodoListPageData {
 	return &TodoListPageData{
-		Todos: []*store.Todo{},
+		Todos: []*entity.Todo{},
 		Form:  NewTodoForm(r),
 	}
 }

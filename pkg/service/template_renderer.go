@@ -43,6 +43,19 @@ func getTemplateKey(layoutPath, pagePath string) string {
 	return fmt.Sprintf("%s:%s", layoutName, pageName)
 }
 
+// NewTemplateRenderer returns a new TemplateRenderer
+// that can be used to render templates
+// to a http.ResponseWriter
+//
+// Parameters:
+//   - baseTemplateFile: the path to the base template file
+//   - layoutDir: the path to the layout directory
+//   - pagesDir: the path to the pages directory
+//   - partialsDir: the path to the partials directory
+//
+// Returns:
+//   - *TemplateRenderer: a new TemplateRenderer
+//   - error: an error
 func NewTemplateRenderer(baseTemplateFile, layoutDir, pagesDir, partialsDir string) (*TemplateRenderer, error) {
 	templates := make(map[string]*template.Template)
 

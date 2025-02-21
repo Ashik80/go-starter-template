@@ -29,5 +29,6 @@ func (h *HomeHandler) Routes() {
 
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
 	p := page.NewHomePage()
+	w.WriteHeader(200)
 	h.Render(w, p)
 }

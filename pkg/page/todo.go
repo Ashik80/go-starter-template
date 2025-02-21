@@ -1,14 +1,14 @@
 package page
 
 import (
+	"go-starter-template/pkg/entity"
 	"go-starter-template/pkg/form"
-	"go-starter-template/pkg/store"
 	"net/http"
 )
 
 type TodoPageData struct {
 	Form       *TodoEditForm
-	Todo       *store.Todo
+	Todo       *entity.Todo
 	DeleteForm *TodoDeleteForm
 }
 
@@ -34,7 +34,7 @@ func NewTodoPage(r *http.Request) *Page {
 	}
 }
 
-func NewTodoEditForm(r *http.Request, todo *store.Todo) *TodoEditForm {
+func NewTodoEditForm(r *http.Request, todo *entity.Todo) *TodoEditForm {
 	return &TodoEditForm{
 		Form:        form.NewForm(r),
 		ID:          todo.ID,
@@ -44,7 +44,7 @@ func NewTodoEditForm(r *http.Request, todo *store.Todo) *TodoEditForm {
 	}
 }
 
-func NewTodoPageData(r *http.Request, todo *store.Todo) *TodoPageData {
+func NewTodoPageData(r *http.Request, todo *entity.Todo) *TodoPageData {
 	return &TodoPageData{
 		Todo:       todo,
 		Form:       NewTodoEditForm(r, todo),
@@ -52,7 +52,7 @@ func NewTodoPageData(r *http.Request, todo *store.Todo) *TodoPageData {
 	}
 }
 
-func NewDeleteForm(r *http.Request, todo *store.Todo) *TodoDeleteForm {
+func NewDeleteForm(r *http.Request, todo *entity.Todo) *TodoDeleteForm {
 	return &TodoDeleteForm{
 		Form: form.NewForm(r),
 		ID:   todo.ID,

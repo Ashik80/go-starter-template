@@ -4,15 +4,6 @@ dbDriver = postgres
 dsn = user=${DB_USER} dbname=${DB_NAME} password=${DB_PASSWORD} host=${DB_HOST} port=${DB_PORT} sslmode=${DB_SSL_MODE}
 migrationsDir = ./pkg/migrations
 
-ent-install:
-	@go get entgo.io/ent/cmd/ent
-
-ent-new:
-	@go run -mod=mod entgo.io/ent/cmd/ent new $(name)
-
-ent-gen:
-	@go generate ./ent
-
 db-status:
 	@GOOSE_DRIVER="$(dbDriver)" GOOSE_DBSTRING="$(dsn)" goose status -dir $(migrationsDir)
 

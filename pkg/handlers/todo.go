@@ -68,6 +68,7 @@ func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	todoData.Todos = todos
 
+	w.WriteHeader(200)
 	t.Render(w, p)
 }
 
@@ -102,6 +103,7 @@ func (t *TodoHandler) Get(w http.ResponseWriter, r *http.Request) {
 	todoData := page.NewTodoPageData(r, todo)
 	p.Data = todoData
 
+	w.WriteHeader(200)
 	t.Render(w, p)
 }
 
@@ -270,6 +272,6 @@ func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
 	w.Header().Add("Hx-Location", "/todos")
+	w.WriteHeader(http.StatusNoContent)
 }
