@@ -2,117 +2,158 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-	"time"
 
-	"go-starter-template/ent"
-	"go-starter-template/ent/todo"
+	"go-starter-template/pkg/entity"
 )
 
-type (
-	Todo struct {
-		ID          int       `json:"id,omitempty"`
-		Title       string    `json:"title,omitempty"`
-		Description string    `json:"description,omitempty"`
-		CreatedAt   time.Time `json:"created_at,omitempty"`
-		UpdatedAt   time.Time `json:"updated_at,omitempty"`
-	}
-
-	TodoStore interface {
-		List(ctx context.Context) ([]*Todo, error)
-		Get(ctx context.Context, id int) (*Todo, error)
-		Create(ctx context.Context, todoDto *TodoCreateDto) (*Todo, error)
-		Update(ctx context.Context, todo *Todo, todoDto *TodoCreateDto) (*Todo, error)
-		Delete(ctx context.Context, todo *Todo) error
-	}
-)
-
-type (
-	EntTodoStore struct {
-		orm *ent.Client
-	}
-
-	TodoCreateDto struct {
-		Title       string `json:"title"`
-		Description string `json:"description,omitempty"`
-	}
-)
-
-func NewEntTodoStore(orm *ent.Client) *EntTodoStore {
-	return &EntTodoStore{orm}
+type TodoStore interface {
+	List(ctx context.Context) ([]*entity.Todo, error)
+	Get(ctx context.Context, id int) (*entity.Todo, error)
+	Create(ctx context.Context, todoDto *TodoCreateDto) (*entity.Todo, error)
+	Update(ctx context.Context, todo *entity.Todo, todoDto *TodoCreateDto) (*entity.Todo, error)
+	Delete(ctx context.Context, todo *entity.Todo) error
 }
 
-func NewTodoCreateDto(title string) *TodoCreateDto {
-	return &TodoCreateDto{
-		Title: title,
-	}
+type TodoCreateDto struct {
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
 }
 
-func (t *EntTodoStore) List(ctx context.Context) ([]*Todo, error) {
-	todos, err := t.orm.Todo.Query().Order(todo.ByID()).All(ctx)
+type PQTodoStore struct {
+	db *sql.DB
+}
+
+func NewPQTodoStore(db *sql.DB) TodoStore {
+	return &PQTodoStore{db}
+}
+
+func (t *PQTodoStore) List(ctx context.Context) ([]*entity.Todo, error) {
+	rows, err := t.db.QueryContext(ctx, "SELECT * FROM todos")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get todos: %w\n", err)
+		return nil, fmt.Errorf("failed to get todos: %w", err)
 	}
-	return mapTodos(todos), nil
+	defer rows.Close()
+
+	todos := make([]*entity.Todo, 0)
+	for rows.Next() {
+		var todo entity.Todo
+		if err := rows.Scan(
+			&todo.ID,
+			&todo.Title,
+			&todo.Description,
+			&todo.CreatedAt,
+			&todo.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan todo: %w", err)
+		}
+		todos = append(todos, &todo)
+	}
+	return todos, nil
 }
 
-func (t *EntTodoStore) Get(ctx context.Context, id int) (*Todo, error) {
-	todo, err := t.orm.Todo.Get(ctx, id)
+func (t *PQTodoStore) Get(ctx context.Context, id int) (*entity.Todo, error) {
+	row := t.db.QueryRowContext(ctx, "SELECT * FROM todos WHERE id = $1", id)
+
+	var todo entity.Todo
+	err := row.Scan(
+		&todo.ID,
+		&todo.Title,
+		&todo.Description,
+		&todo.CreatedAt,
+		&todo.UpdatedAt,
+	)
+	if err != nil && err == sql.ErrNoRows {
+		return nil, newNotFoundError("todo")
+	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get todo: %w\n", err)
+		return nil, fmt.Errorf("failed to scan todo: %w", err)
 	}
-	return mapTodo(todo), nil
+	return &todo, nil
 }
 
-func (t *EntTodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*Todo, error) {
-	query := t.orm.Todo.Create().SetTitle(todoDto.Title)
-
-	if todoDto.Description != "" {
-		query.SetDescription(todoDto.Description)
-	}
-
-	todo, err := query.Save(ctx)
+func (t *PQTodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*entity.Todo, error) {
+	tx, err := t.db.Begin()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create todos: %w\n", err)
-	}
-	return mapTodo(todo), nil
-}
-
-func (t *EntTodoStore) Update(ctx context.Context, todo *Todo, todoDto *TodoCreateDto) (*Todo, error) {
-	query := t.orm.Todo.UpdateOneID(todo.ID).SetTitle(todoDto.Title)
-
-	if todoDto.Description != "" {
-		query.SetDescription(todoDto.Description)
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	updatedTodo, err := query.Save(ctx)
+	var todo entity.Todo
+	err = tx.QueryRowContext(ctx,
+		"INSERT INTO todos (title, description) VALUES ($1, $2) RETURNING *",
+		todoDto.Title,
+		todoDto.Description,
+	).Scan(
+		&todo.ID,
+		&todo.Title,
+		&todo.Description,
+		&todo.CreatedAt,
+		&todo.UpdatedAt,
+	)
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to update todo: %w\n", err)
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return nil, fmt.Errorf("failed to rollback transaction: %w; original error: %w", rollbackErr, err)
+		}
+		return nil, fmt.Errorf("failed to create todo: %w", err)
 	}
-	return mapTodo(updatedTodo), nil
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return &todo, nil
 }
 
-func (t *EntTodoStore) Delete(ctx context.Context, todo *Todo) error {
-	if err := t.orm.Todo.DeleteOneID(todo.ID).Exec(ctx); err != nil {
-		return fmt.Errorf("failed to delete todo: %w\n", err)
+func (t *PQTodoStore) Update(ctx context.Context, todo *entity.Todo, todoDto *TodoCreateDto) (*entity.Todo, error) {
+	tx, err := t.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	var updatedTodo entity.Todo
+	err = tx.QueryRowContext(ctx,
+		"UPDATE todos SET title = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *",
+		todoDto.Title,
+		todoDto.Description,
+		todo.ID,
+	).Scan(
+		&updatedTodo.ID,
+		&updatedTodo.Title,
+		&updatedTodo.Description,
+		&updatedTodo.CreatedAt,
+		&updatedTodo.UpdatedAt,
+	)
+
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return nil, fmt.Errorf("failed to rollback transaction: %w; original error: %w", rollbackErr, err)
+		}
+		return nil, fmt.Errorf("failed to update todo: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return &updatedTodo, nil
+}
+
+func (t *PQTodoStore) Delete(ctx context.Context, todo *entity.Todo) error {
+	tx, err := t.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM todos WHERE id = $1", todo.ID)
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return fmt.Errorf("failed to rollback transaction: %w; original error: %w", rollbackErr, err)
+		}
+		return fmt.Errorf("failed to delete todo: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return nil
-}
-
-func mapTodo(todo *ent.Todo) *Todo {
-	return &Todo{
-		ID:          todo.ID,
-		Title:       todo.Title,
-		Description: todo.Description,
-		CreatedAt:   todo.CreatedAt,
-		UpdatedAt:   todo.UpdatedAt,
-	}
-}
-
-func mapTodos(todos []*ent.Todo) []*Todo {
-	var ts []*Todo
-	for _, todo := range todos {
-		ts = append(ts, mapTodo(todo))
-	}
-	return ts
 }

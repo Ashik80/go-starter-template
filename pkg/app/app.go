@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,20 +11,16 @@ import (
 	"syscall"
 	"time"
 
-	"go-starter-template/ent"
-	"go-starter-template/pkg/config"
 	"go-starter-template/pkg/service"
 	"go-starter-template/pkg/store"
 
-	"entgo.io/ent/dialect"
-	entsql "entgo.io/ent/dialect/sql"
 	_ "github.com/lib/pq"
 )
 
 type App struct {
-	Config           *config.Config
+	Config           *service.Config
 	Router           service.Router
-	Orm              *ent.Client
+	DB               *sql.DB
 	Store            *store.Store
 	TemplateRenderer *service.TemplateRenderer
 	server           *http.Server
@@ -34,12 +31,11 @@ func Init(ctx context.Context) *App {
 	a := new(App)
 
 	a.initConfig()
-	a.initOrm()
-	// a.autoMigrateSchema(ctx)
+	a.initDB()
+	a.initStores()
 	a.initRouterMux()
 	a.initFileServer()
 	a.initTemplatingEngine()
-	a.initStores()
 	a.initPasswordHasher()
 	a.initApplicationServer()
 
@@ -51,7 +47,7 @@ func (a *App) initPasswordHasher() {
 }
 
 func (a *App) initConfig() {
-	conf, err := config.NewConfig()
+	conf, err := service.NewConfig()
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
@@ -78,33 +74,17 @@ func (a *App) initRouterMux() {
 	log.Println("INFO: router initialized")
 }
 
-func (a *App) initOrm() {
-	dsn := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%s/%s",
-		a.Config.DatabaseConfig.User,
-		a.Config.DatabaseConfig.Password,
-		a.Config.DatabaseConfig.Host,
-		a.Config.DatabaseConfig.Port,
-		a.Config.DatabaseConfig.Name,
-	)
-	drv, err := entsql.Open(dialect.Postgres, dsn)
+func (a *App) initDB() {
+	db, err := service.NewDatabaseConfig(a.Config)
 	if err != nil {
 		log.Fatalf("ERROR: failed to open database: %v", err)
 	}
-	client := ent.NewClient(ent.Driver(drv))
-	a.Orm = client
-	log.Println("INFO: ent orm initialized")
-}
-
-func (a *App) autoMigrateSchema(ctx context.Context) {
-	if err := a.Orm.Schema.Create(ctx); err != nil {
-		log.Fatalf("ERROR: failed to migrate schema: %v", err)
-	}
-	log.Println("INFO: auto migration initialized")
+	a.DB = db
+	log.Println("INFO: database initialized")
 }
 
 func (a *App) initStores() {
-	a.Store = store.NewDataStore(a.Orm)
+	a.Store = store.NewDataStore(a.DB)
 	log.Println("INFO: stores initialized")
 }
 

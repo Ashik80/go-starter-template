@@ -1,9 +1,10 @@
 package auth_helpers
 
 import (
-	"go-starter-template/pkg/store"
 	"net/http"
 	"unicode"
+
+	"go-starter-template/pkg/entity"
 )
 
 func IsStrongPassword(password string) []string {
@@ -50,7 +51,7 @@ func IsStrongPassword(password string) []string {
 	return errors
 }
 
-func SetSessionCookie(w http.ResponseWriter, session *store.Session, env string) {
+func SetSessionCookie(w http.ResponseWriter, session *entity.Session, env string) {
 	secure := true
 	if env == "development" {
 		secure = false

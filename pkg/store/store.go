@@ -1,19 +1,17 @@
 package store
 
-import (
-	"go-starter-template/ent"
-)
+import "database/sql"
 
 type Store struct {
-	orm          *ent.Client
+	db           *sql.DB
 	TodoStore    TodoStore
 	UserStore    UserStore
 	SessionStore SessionStore
 }
 
-func NewDataStore(orm *ent.Client) *Store {
+func NewDataStore(db *sql.DB) *Store {
 	s := new(Store)
-	s.orm = orm
+	s.db = db
 
 	s.initUserStore()
 	s.initSessionStore()
@@ -23,13 +21,13 @@ func NewDataStore(orm *ent.Client) *Store {
 }
 
 func (s *Store) initTodoStore() {
-	s.TodoStore = NewEntTodoStore(s.orm)
+	s.TodoStore = NewPQTodoStore(s.db)
 }
 
 func (s *Store) initUserStore() {
-	s.UserStore = NewEntUserStore(s.orm)
+	s.UserStore = NewPQUserStore(s.db)
 }
 
 func (s *Store) initSessionStore() {
-	s.SessionStore = NewEntSessionStore(s.orm)
+	s.SessionStore = NewPQSessionStore(s.db)
 }

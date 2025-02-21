@@ -47,6 +47,7 @@ func (h *AuthHandlers) Routes() {
 func (h *AuthHandlers) LoginView(w http.ResponseWriter, r *http.Request) {
 	p := page.NewLoginPage()
 	p.Data = page.NewLoginPageData(r)
+	w.WriteHeader(200)
 	h.Render(w, p)
 }
 
@@ -85,6 +86,7 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 		loginForm.Error = err.Error()
 		w.WriteHeader(500)
 		h.RenderPartial(w, "login-form", loginForm)
+		return
 	}
 
 	auth_helpers.SetSessionCookie(w, sess, h.env)
@@ -96,6 +98,7 @@ func (h *AuthHandlers) Login(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandlers) SignupView(w http.ResponseWriter, r *http.Request) {
 	p := page.NewSignupPage()
 	p.Data = page.NewSignupPageData(r)
+	w.WriteHeader(200)
 	h.Render(w, p)
 }
 
