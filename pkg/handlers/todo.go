@@ -15,7 +15,7 @@ import (
 
 type TodoHandler struct {
 	service.Router
-	*service.TemplateRenderer
+	service.TemplateRenderer
 	todoStore      store.TodoStore
 	authMiddleware middlewares.MiddlewareFunc
 }

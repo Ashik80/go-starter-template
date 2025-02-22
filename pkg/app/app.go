@@ -22,7 +22,7 @@ type App struct {
 	Router           service.Router
 	DB               *sql.DB
 	Store            *store.Store
-	TemplateRenderer *service.TemplateRenderer
+	TemplateRenderer service.TemplateRenderer
 	server           *http.Server
 	PasswordHasher   service.PasswordHasher
 }

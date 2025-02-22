@@ -13,7 +13,14 @@ import (
 	"go-starter-template/pkg/page"
 )
 
-type TemplateRenderer struct {
+type TemplateRenderer interface {
+	GetTemplate(key string) (*template.Template, error)
+	Render(w http.ResponseWriter, p *page.Page) error
+	RenderPartial(w http.ResponseWriter, partial string, data any) error
+	RenderString(w http.ResponseWriter, html string, data any) error
+}
+
+type TemplateRendererImpl struct {
 	templates map[string]*template.Template
 	partials  *template.Template
 	mu        sync.Mutex
@@ -56,7 +63,7 @@ func getTemplateKey(layoutPath, pagePath string) string {
 // Returns:
 //   - *TemplateRenderer: a new TemplateRenderer
 //   - error: an error
-func NewTemplateRenderer(baseTemplateFile, layoutDir, pagesDir, partialsDir string) (*TemplateRenderer, error) {
+func NewTemplateRenderer(baseTemplateFile, layoutDir, pagesDir, partialsDir string) (TemplateRenderer, error) {
 	templates := make(map[string]*template.Template)
 
 	layouts, err := walkTemplateFiles(layoutDir)
@@ -116,13 +123,13 @@ func NewTemplateRenderer(baseTemplateFile, layoutDir, pagesDir, partialsDir stri
 		}
 	}
 
-	return &TemplateRenderer{
+	return &TemplateRendererImpl{
 		templates: templates,
 		partials:  partialTmpl,
 	}, nil
 }
 
-func (t *TemplateRenderer) Render(w http.ResponseWriter, p *page.Page) error {
+func (t *TemplateRendererImpl) Render(w http.ResponseWriter, p *page.Page) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -149,12 +156,12 @@ func (t *TemplateRenderer) Render(w http.ResponseWriter, p *page.Page) error {
 	return tmpl.ExecuteTemplate(w, "base", p)
 }
 
-func (t *TemplateRenderer) RenderPartial(w http.ResponseWriter, partial string, data any) error {
+func (t *TemplateRendererImpl) RenderPartial(w http.ResponseWriter, partial string, data any) error {
 	w.Header().Add("Content-Type", "text/html")
 	return t.partials.ExecuteTemplate(w, partial, data)
 }
 
-func (t *TemplateRenderer) RenderString(w http.ResponseWriter, html string, data any) error {
+func (t *TemplateRendererImpl) RenderString(w http.ResponseWriter, html string, data any) error {
 	w.Header().Add("Content-Type", "text/html")
 	tmpl, err := template.New("").Parse(html)
 	if err != nil {
@@ -165,7 +172,7 @@ func (t *TemplateRenderer) RenderString(w http.ResponseWriter, html string, data
 	return tmpl.Execute(w, data)
 }
 
-func (t *TemplateRenderer) GetTemplate(key string) (*template.Template, error) {
+func (t *TemplateRendererImpl) GetTemplate(key string) (*template.Template, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 

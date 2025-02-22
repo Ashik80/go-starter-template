@@ -15,7 +15,7 @@ import (
 )
 
 type AuthHandlers struct {
-	*service.TemplateRenderer
+	service.TemplateRenderer
 	service.Router
 	env            string
 	userStore      store.UserStore
@@ -137,8 +137,7 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if user != nil {
-		errorMsg := fmt.Sprintf("user with email %s already exists", signupForm.Email)
-		signupForm.Error.ErrorMessage = errorMsg
+		signupForm.Error.ErrorMessage = fmt.Sprintf("user with email %s already exists", signupForm.Email)
 		w.WriteHeader(http.StatusConflict)
 		h.RenderPartial(w, "signup-form", signupForm)
 		return
@@ -152,7 +151,7 @@ func (h *AuthHandlers) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = h.userStore.Create(ctx, signupForm.Email, string(passwordHash))
+	_, err = h.userStore.Create(ctx, signupForm.Email, passwordHash)
 	if err != nil {
 		signupForm.Error.ErrorMessage = err.Error()
 		w.WriteHeader(http.StatusUnprocessableEntity)

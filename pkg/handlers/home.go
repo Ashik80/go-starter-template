@@ -9,7 +9,7 @@ import (
 )
 
 type HomeHandler struct {
-	*service.TemplateRenderer
+	service.TemplateRenderer
 	service.Router
 }
 
