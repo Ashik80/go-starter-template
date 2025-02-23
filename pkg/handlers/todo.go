@@ -35,11 +35,19 @@ func (t *TodoHandler) Init(a *app.App) error {
 func (t *TodoHandler) Routes() {
 	// INFO: to protect a route middleware must be called like this
 	// t.Handle("/todos", t.authMiddleware(http.HandlerFunc(t.List)))
-	t.HandleFunc("/todos", t.List)
-	t.HandleFunc("/todos/{id}", t.Get)
-	t.HandleFunc("POST /todos", t.Create)
-	t.HandleFunc("PUT /todos/{id}", t.Update)
-	t.HandleFunc("DELETE /todos/{id}", t.Delete)
+	// t.Router.Get("/todos", t.List)
+	// t.Router.Get("/todos/{id}", t.Get)
+	// t.Router.Post("/todos", t.Create)
+	// t.Router.Put("/todos/{id}", t.Update)
+	// t.Router.Delete("/todos/{id}", t.Delete)
+
+	t.Route("/todos", func(r service.Router) {
+		r.Get("/", t.List)
+		r.Get("/{id}", t.Get)
+		r.Post("/", t.Create)
+		r.Put("/{id}", t.Update)
+		r.Delete("/{id}", t.Delete)
+	})
 }
 
 func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
