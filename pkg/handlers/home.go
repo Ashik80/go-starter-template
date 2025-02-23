@@ -24,7 +24,7 @@ func (h *HomeHandler) Init(a *app.App) error {
 }
 
 func (h *HomeHandler) Routes() {
-	h.Router.HandleFunc("/", h.Index)
+	h.Get("/", h.Index)
 }
 
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
