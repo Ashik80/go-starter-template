@@ -81,7 +81,7 @@ func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t *TodoHandler) Get(w http.ResponseWriter, r *http.Request) {
-	id, err := parseToInt(r.PathValue("id"))
+	id, err := parseToInt(service.GetParam(r, "id"))
 
 	if t.Wants(r, "application/json") {
 		if err != nil {
@@ -167,7 +167,8 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id, err := parseToInt(r.PathValue("id"))
+	id, err := parseToInt(service.GetParam(r, "id"))
+	// id, err := parseToInt(r.PathValue("id"))
 
 	var todoDto store.TodoCreateDto
 
@@ -231,7 +232,7 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	id, err := parseToInt(r.PathValue("id"))
+	id, err := parseToInt(service.GetParam(r, "id"))
 
 	if err != nil {
 		jsonErrorResponse(w, http.StatusBadRequest, err.Error())
