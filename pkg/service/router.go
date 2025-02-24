@@ -13,6 +13,7 @@ type Router interface {
 	HandleFunc(string, http.HandlerFunc)
 	Handle(string, http.Handler)
 	Use(middlewares ...func(http.Handler) http.Handler)
+	With(middlewares ...func(http.Handler) http.Handler) Router
 	Wants(*http.Request, string) bool
 	Get(pattern string, h http.HandlerFunc)
 	Post(pattern string, h http.HandlerFunc)
@@ -35,7 +36,7 @@ type NetServerMux struct {
 	handlers map[string]*Route
 	prefix   string
 	mux      *http.ServeMux
-	mws      []middlewares.MiddlewareFunc
+	mws      []func(http.Handler) http.Handler
 }
 
 func NewNetServerMux(conf *Config) *NetServerMux {
@@ -44,7 +45,7 @@ func NewNetServerMux(conf *Config) *NetServerMux {
 		conf:     conf,
 		prefix:   "",
 		mux:      mux,
-		mws:      []middlewares.MiddlewareFunc{},
+		mws:      make([]func(http.Handler) http.Handler, 0),
 		handlers: make(map[string]*Route),
 	}
 
@@ -54,6 +55,145 @@ func NewNetServerMux(conf *Config) *NetServerMux {
 	n.Use(middlewares.EnableCors(conf.AllowedOrigins))
 
 	return n
+}
+
+func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h := n.applyMiddlewares(n.mux)
+
+	var route *Route
+	key := r.URL.Path
+	if r.Method != "GET" {
+		key = r.Method + " " + r.URL.Path
+	}
+
+	route, exists := n.handlers[key]
+	if !exists {
+		for k, v := range n.handlers {
+			if !v.hasParams {
+				continue
+			}
+
+			methodMatches := true
+			path := k
+			if r.Method != "GET" {
+				if !strings.HasPrefix(k, r.Method+" ") {
+					continue
+				}
+				path = strings.TrimPrefix(k, r.Method+" ")
+			}
+
+			matched, params := matchRoute(path, v.paramNames, r.URL.Path)
+			if matched && methodMatches {
+				ctx := context.WithValue(r.Context(), "params", params)
+				r = r.WithContext(ctx)
+				route = v
+				exists = true
+				break
+			}
+		}
+	}
+
+	if exists {
+		h := n.applyMiddlewares(route.handler)
+		h.ServeHTTP(w, r)
+		return
+	}
+
+	h.ServeHTTP(w, r)
+}
+
+func (n *NetServerMux) Get(pattern string, handler http.HandlerFunc) {
+	method := "GET"
+	n.addToRoutes(method, pattern, handler)
+}
+
+func (n *NetServerMux) Post(pattern string, handler http.HandlerFunc) {
+	method := "POST"
+	n.addToRoutes(method, pattern, handler)
+}
+
+func (n *NetServerMux) Put(pattern string, handler http.HandlerFunc) {
+	method := "PUT"
+	n.addToRoutes(method, pattern, handler)
+}
+
+func (n *NetServerMux) Patch(pattern string, handler http.HandlerFunc) {
+	method := "PATCH"
+	n.addToRoutes(method, pattern, handler)
+}
+
+func (n *NetServerMux) Delete(pattern string, handler http.HandlerFunc) {
+	method := "DELETE"
+	n.addToRoutes(method, pattern, handler)
+}
+
+func (n *NetServerMux) HandleFunc(pattern string, handler http.HandlerFunc) {
+	n.mux.HandleFunc(pattern, handler)
+}
+
+func (n *NetServerMux) Handle(pattern string, handler http.Handler) {
+	n.mux.Handle(pattern, handler)
+}
+
+func (n *NetServerMux) Wants(r *http.Request, accept string) bool {
+	a := r.Header.Get("Accept")
+	return a == accept
+}
+
+func (n *NetServerMux) Use(middlewares ...func(http.Handler) http.Handler) {
+	n.mws = append(n.mws, middlewares...)
+}
+
+func (n *NetServerMux) With(middlewares ...func(http.Handler) http.Handler) Router {
+	child := &NetServerMux{
+		conf:     n.conf,
+		prefix:   n.prefix,
+		mux:      n.mux,
+		handlers: n.handlers,
+		mws:      append(n.mws, middlewares...),
+	}
+	return child
+}
+
+func (n *NetServerMux) Route(pattern string, fn func(r Router)) Router {
+	subMux := NewNetServerMux(n.conf)
+	subMux.prefix = n.prefix + pattern
+	subMux.mws = append(subMux.mws, n.mws...)
+
+	fn(subMux)
+
+	for k, v := range subMux.handlers {
+		if k[len(k)-1] == '/' {
+			k = k[:len(k)-1]
+		}
+		n.handlers[k] = v
+	}
+
+	return subMux
+}
+
+func GetParam(r *http.Request, paramName string) string {
+	ctx := r.Context()
+	if params, ok := ctx.Value("params").(map[string]string); ok {
+		return params[paramName]
+	}
+	return ""
+}
+
+func (n *NetServerMux) addToRoutes(method string, pattern string, handler http.HandlerFunc) {
+	cleanPattern, paramNames := extractPathParams(pattern)
+	hasParams := len(paramNames) > 0
+
+	key := n.prefix + cleanPattern
+	if method != "GET" {
+		key = method + " " + n.prefix + cleanPattern
+	}
+
+	n.handlers[key] = &Route{
+		handler:    n.applyMiddlewares(handler),
+		paramNames: paramNames,
+		hasParams:  hasParams,
+	}
 }
 
 func (n *NetServerMux) applyMiddlewares(handler http.Handler) http.Handler {
@@ -104,130 +244,4 @@ func matchRoute(pattern string, paramNames []string, path string) (bool, map[str
 	}
 
 	return true, params
-}
-
-func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	h := n.applyMiddlewares(n.mux)
-
-	var route *Route
-	key := r.URL.Path
-	if r.Method != "GET" {
-		key = r.Method + " " + r.URL.Path
-	}
-
-	route, exists := n.handlers[key]
-	if !exists {
-		for k, v := range n.handlers {
-			if !v.hasParams {
-				continue
-			}
-
-			methodMatches := true
-			path := k
-			if r.Method != "GET" {
-				if !strings.HasPrefix(k, r.Method+" ") {
-					continue
-				}
-				path = strings.TrimPrefix(k, r.Method+" ")
-			}
-
-			matched, params := matchRoute(path, v.paramNames, r.URL.Path)
-			if matched && methodMatches {
-				ctx := context.WithValue(r.Context(), "params", params)
-				r = r.WithContext(ctx)
-				route = v
-				exists = true
-				break
-			}
-		}
-	}
-
-	if exists {
-		h := n.applyMiddlewares(route.handler)
-		h.ServeHTTP(w, r)
-		return
-	}
-
-	h.ServeHTTP(w, r)
-}
-
-func (n *NetServerMux) addToRoutes(method string, pattern string, handler http.HandlerFunc) {
-	cleanPattern, paramNames := extractPathParams(pattern)
-	hasParams := len(paramNames) > 0
-
-	key := n.prefix + cleanPattern
-	if method != "GET" {
-		key = method + " " + n.prefix + cleanPattern
-	}
-
-	n.handlers[key] = &Route{
-		handler:    handler,
-		paramNames: paramNames,
-		hasParams:  hasParams,
-	}
-}
-
-func (n *NetServerMux) Get(pattern string, handler http.HandlerFunc) {
-	method := "GET"
-	n.addToRoutes(method, pattern, handler)
-}
-
-func (n *NetServerMux) Post(pattern string, handler http.HandlerFunc) {
-	method := "POST"
-	n.addToRoutes(method, pattern, handler)
-}
-
-func (n *NetServerMux) Put(pattern string, handler http.HandlerFunc) {
-	method := "PUT"
-	n.addToRoutes(method, pattern, handler)
-}
-
-func (n *NetServerMux) Patch(pattern string, handler http.HandlerFunc) {
-	method := "PATCH"
-	n.addToRoutes(method, pattern, handler)
-}
-
-func (n *NetServerMux) Delete(pattern string, handler http.HandlerFunc) {
-	method := "DELETE"
-	n.addToRoutes(method, pattern, handler)
-}
-
-func (n *NetServerMux) HandleFunc(pattern string, handler http.HandlerFunc) {
-	n.mux.HandleFunc(pattern, handler)
-}
-
-func (n *NetServerMux) Handle(pattern string, handler http.Handler) {
-	n.mux.Handle(pattern, handler)
-}
-
-func (n *NetServerMux) Wants(r *http.Request, accept string) bool {
-	a := r.Header.Get("Accept")
-	return a == accept
-}
-
-func (n *NetServerMux) Use(middlewares ...func(http.Handler) http.Handler) {
-	for _, mw := range middlewares {
-		n.mws = append(n.mws, mw)
-	}
-}
-
-func (n *NetServerMux) Route(pattern string, fn func(r Router)) Router {
-	subMux := NewNetServerMux(n.conf)
-	subMux.prefix = n.prefix + pattern
-	fn(subMux)
-	for k, v := range subMux.handlers {
-		if k[len(k)-1] == '/' {
-			k = k[:len(k)-1]
-		}
-		n.handlers[k] = v
-	}
-	return subMux
-}
-
-func GetParam(r *http.Request, paramName string) string {
-	ctx := r.Context()
-	if params, ok := ctx.Value("params").(map[string]string); ok {
-		return params[paramName]
-	}
-	return ""
 }

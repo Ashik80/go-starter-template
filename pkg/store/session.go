@@ -14,6 +14,7 @@ type SessionStore interface {
 	Create(ctx context.Context, user *entity.User, expiresAt time.Time) (*entity.Session, error)
 	Get(ctx context.Context, sessionId string) (*entity.Session, error)
 	GetWithUser(ctx context.Context, sessionId string) (*entity.Session, error)
+	Delete(ctx context.Context, sessionId string) error
 }
 
 type PQSessionStore struct {
@@ -108,4 +109,25 @@ func (s *PQSessionStore) GetWithUser(ctx context.Context, sessionId string) (*en
 	}
 	session.User = &user
 	return &session, nil
+}
+
+func (s *PQSessionStore) Delete(ctx context.Context, sessionId string) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	_, err = tx.ExecContext(ctx, "DELETE FROM sessions WHERE id = $1", sessionId)
+	if err != nil {
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return fmt.Errorf("failed to rollback transaction: %w; original error: %w", rollbackErr, err)
+		}
+		return fmt.Errorf("failed to delete session: %w\n", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
 }
