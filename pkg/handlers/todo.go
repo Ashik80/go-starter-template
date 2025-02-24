@@ -33,15 +33,13 @@ func (t *TodoHandler) Init(a *app.App) error {
 }
 
 func (t *TodoHandler) Routes() {
-	// INFO: to protect a route middleware must be called like this
-	// t.Handle("/todos", t.authMiddleware(http.HandlerFunc(t.List)))
-	// t.Router.Get("/todos", t.List)
-	// t.Router.Get("/todos/{id}", t.Get)
-	// t.Router.Post("/todos", t.Create)
-	// t.Router.Put("/todos/{id}", t.Update)
-	// t.Router.Delete("/todos/{id}", t.Delete)
+	// INFO: to apply middleware to a single route use With method
+	// t.Router.With(t.authMiddleware).Get("/todos", t.List)
 
 	t.Route("/todos", func(r service.Router) {
+		// INFO: to apply middleware to a group of routes use Use method
+		r.Use(t.authMiddleware)
+
 		r.Get("/", t.List)
 		r.Get("/{id}", t.Get)
 		r.Post("/", t.Create)
@@ -168,7 +166,6 @@ func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	id, err := parseToInt(service.GetParam(r, "id"))
-	// id, err := parseToInt(r.PathValue("id"))
 
 	var todoDto store.TodoCreateDto
 
