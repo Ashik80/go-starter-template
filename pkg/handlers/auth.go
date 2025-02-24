@@ -38,10 +38,10 @@ func (h *AuthHandlers) Init(a *app.App) error {
 }
 
 func (h *AuthHandlers) Routes() {
-	h.HandleFunc("/login", h.LoginView)
-	h.HandleFunc("POST /login", h.Login)
-	h.HandleFunc("/signup", h.SignupView)
-	h.HandleFunc("POST /signup", h.Signup)
+	h.Get("/login", h.LoginView)
+	h.Post("/login", h.Login)
+	h.Get("/signup", h.SignupView)
+	h.Post("/signup", h.Signup)
 }
 
 func (h *AuthHandlers) LoginView(w http.ResponseWriter, r *http.Request) {

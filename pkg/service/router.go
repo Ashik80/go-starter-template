@@ -1,31 +1,38 @@
 package service
 
 import (
+	"context"
 	"net/http"
+	"strings"
 
 	"go-starter-template/pkg/middlewares"
 )
 
 type Router interface {
-	ServeHTTP(http.ResponseWriter, *http.Request)
+	http.Handler
 	HandleFunc(string, http.HandlerFunc)
 	Handle(string, http.Handler)
 	Use(middlewares ...func(http.Handler) http.Handler)
 	Wants(*http.Request, string) bool
-	// TODO: implement if grouping of endpoints is needed
-	// refer to chi's doc for more interfaces. https://github.com/go-chi/chi
 	Get(pattern string, h http.HandlerFunc)
 	Post(pattern string, h http.HandlerFunc)
 	Put(pattern string, h http.HandlerFunc)
 	Patch(pattern string, h http.HandlerFunc)
 	Delete(pattern string, h http.HandlerFunc)
-
 	Route(pattern string, fn func(r Router)) Router
+	// TODO: implement if grouping of endpoints is needed
+	// refer to chi's doc for more interfaces. https://github.com/go-chi/chi
+}
+
+type Route struct {
+	handler    http.Handler
+	paramNames []string
+	hasParams  bool
 }
 
 type NetServerMux struct {
 	conf     *Config
-	handlers map[string]http.Handler
+	handlers map[string]*Route
 	prefix   string
 	mux      *http.ServeMux
 	mws      []middlewares.MiddlewareFunc
@@ -38,7 +45,7 @@ func NewNetServerMux(conf *Config) *NetServerMux {
 		prefix:   "",
 		mux:      mux,
 		mws:      []middlewares.MiddlewareFunc{},
-		handlers: make(map[string]http.Handler),
+		handlers: make(map[string]*Route),
 	}
 
 	n.Use(middlewares.Logger)
@@ -56,19 +63,88 @@ func (n *NetServerMux) applyMiddlewares(handler http.Handler) http.Handler {
 	return handler
 }
 
+func extractPathParams(pattern string) (cleanPattern string, paramNames []string) {
+	parts := strings.Split(pattern, "/")
+	cleanParts := make([]string, len(parts))
+	paramNames = make([]string, 0)
+
+	for i, part := range parts {
+		if len(part) > 0 && part[0] == '{' && part[len(part)-1] == '}' {
+			paramName := part[1 : len(part)-1]
+			paramNames = append(paramNames, paramName)
+			cleanParts[i] = "*"
+		} else {
+			cleanParts[i] = part
+		}
+	}
+
+	return strings.Join(cleanParts, "/"), paramNames
+}
+
+func matchRoute(pattern string, paramNames []string, path string) (bool, map[string]string) {
+	patternParts := strings.Split(pattern, "/")
+	pathParts := strings.Split(path, "/")
+
+	if len(patternParts) != len(pathParts) {
+		return false, nil
+	}
+
+	params := make(map[string]string)
+	paramIndex := 0
+
+	for i := 0; i < len(patternParts); i++ {
+		if patternParts[i] == "*" {
+			if paramIndex < len(paramNames) {
+				params[paramNames[paramIndex]] = pathParts[i]
+				paramIndex++
+			}
+		} else if patternParts[i] != pathParts[i] {
+			return false, nil
+		}
+	}
+
+	return true, params
+}
+
 func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h := n.applyMiddlewares(n.mux)
 
-	var route http.Handler
-	if r.Method == "GET" {
-		route = n.handlers[r.URL.Path]
-	} else {
-		route = n.handlers[r.Method+" "+r.URL.Path]
+	var route *Route
+	key := r.URL.Path
+	if r.Method != "GET" {
+		key = r.Method + " " + r.URL.Path
 	}
 
-	if route != nil {
-		route = n.applyMiddlewares(route)
-		route.ServeHTTP(w, r)
+	route, exists := n.handlers[key]
+	if !exists {
+		for k, v := range n.handlers {
+			if !v.hasParams {
+				continue
+			}
+
+			methodMatches := true
+			path := k
+			if r.Method != "GET" {
+				if !strings.HasPrefix(k, r.Method+" ") {
+					continue
+				}
+				path = strings.TrimPrefix(k, r.Method+" ")
+			}
+
+			matched, params := matchRoute(path, v.paramNames, r.URL.Path)
+			if matched && methodMatches {
+				ctx := context.WithValue(r.Context(), "params", params)
+				r = r.WithContext(ctx)
+				route = v
+				exists = true
+				break
+			}
+		}
+	}
+
+	if exists {
+		h := n.applyMiddlewares(route.handler)
+		h.ServeHTTP(w, r)
 		return
 	}
 
@@ -76,11 +152,19 @@ func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (n *NetServerMux) addToRoutes(method string, pattern string, handler http.HandlerFunc) {
-	if method == "GET" {
-		n.handlers[n.prefix+pattern] = handler
-		return
+	cleanPattern, paramNames := extractPathParams(pattern)
+	hasParams := len(paramNames) > 0
+
+	key := n.prefix + cleanPattern
+	if method != "GET" {
+		key = method + " " + n.prefix + cleanPattern
 	}
-	n.handlers[method+" "+n.prefix+pattern] = handler
+
+	n.handlers[key] = &Route{
+		handler:    handler,
+		paramNames: paramNames,
+		hasParams:  hasParams,
+	}
 }
 
 func (n *NetServerMux) Get(pattern string, handler http.HandlerFunc) {
@@ -138,4 +222,12 @@ func (n *NetServerMux) Route(pattern string, fn func(r Router)) Router {
 		n.handlers[k] = v
 	}
 	return subMux
+}
+
+func GetParam(r *http.Request, paramName string) string {
+	ctx := r.Context()
+	if params, ok := ctx.Value("params").(map[string]string); ok {
+		return params[paramName]
+	}
+	return ""
 }
