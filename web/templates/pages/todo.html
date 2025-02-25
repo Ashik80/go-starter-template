@@ -6,7 +6,7 @@
 
   <!--prettier-ignore-->
   {{ if .Data }}
-    {{ template "todo-form" .Data.Form }}
+    {{ template "todo-create-form" .Data.Form }}
     <ul id="todo-list" class="grid grid-cols-3 gap-5" hx-boost="true">
       {{ range .Data.Todos }}
         {{ template "todo-item" . }}

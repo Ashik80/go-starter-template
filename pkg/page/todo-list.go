@@ -27,18 +27,16 @@ func NewTodoListPage() *Page {
 	}
 }
 
-func NewTodoForm(r *http.Request) *TodoCreateForm {
+func NewTodoCreateForm(r *http.Request) *TodoCreateForm {
 	return &TodoCreateForm{
-		Form:        form.NewForm(r),
-		Title:       "",
-		Description: "",
-		Error:       "",
+		Form:  form.NewForm(r),
+		Error: "",
 	}
 }
 
 func NewTodoListPageData(r *http.Request) *TodoListPageData {
 	return &TodoListPageData{
 		Todos: []*entity.Todo{},
-		Form:  NewTodoForm(r),
+		Form:  NewTodoCreateForm(r),
 	}
 }

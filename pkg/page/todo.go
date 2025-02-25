@@ -35,13 +35,18 @@ func NewTodoPage(r *http.Request) *Page {
 }
 
 func NewTodoEditForm(r *http.Request, todo *entity.Todo) *TodoEditForm {
-	return &TodoEditForm{
-		Form:        form.NewForm(r),
-		ID:          todo.ID,
-		Title:       todo.Title,
-		Description: todo.Description,
-		Error:       "",
+	form := &TodoEditForm{
+		Form:  form.NewForm(r),
+		Error: "",
 	}
+	
+	if todo != nil {
+		form.ID = todo.ID
+		form.Title = todo.Title
+		form.Description = todo.Description
+	}
+	
+	return form
 }
 
 func NewTodoPageData(r *http.Request, todo *entity.Todo) *TodoPageData {

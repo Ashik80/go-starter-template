@@ -1,10 +1,7 @@
 package auth_helpers
 
 import (
-	"net/http"
 	"unicode"
-
-	"go-starter-template/pkg/entity"
 )
 
 func IsStrongPassword(password string) []string {
@@ -49,21 +46,4 @@ func IsStrongPassword(password string) []string {
 		errors = append(errors, "Password must have at least 1 special character or symbol")
 	}
 	return errors
-}
-
-func SetSessionCookie(w http.ResponseWriter, session *entity.Session, env string) {
-	secure := true
-	if env == "development" {
-		secure = false
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_id",
-		Value:    session.ID.String(),
-		Path:     "/",
-		Expires:  session.ExpiresAt,
-		HttpOnly: true,
-		Secure:   secure,
-		SameSite: http.SameSiteStrictMode,
-	})
 }

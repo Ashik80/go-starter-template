@@ -1,4 +1,4 @@
-package service
+package infrastructure
 
 import (
 	"context"
@@ -57,6 +57,10 @@ func NewNetServerMux(conf *Config) *NetServerMux {
 	return n
 }
 
+type contextKey string
+
+const paramsContextKey contextKey = "params"
+
 func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h := n.applyMiddlewares(n.mux)
 
@@ -84,7 +88,7 @@ func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			matched, params := matchRoute(path, v.paramNames, r.URL.Path)
 			if matched && methodMatches {
-				ctx := context.WithValue(r.Context(), "params", params)
+				ctx := context.WithValue(r.Context(), paramsContextKey, params)
 				r = r.WithContext(ctx)
 				route = v
 				exists = true

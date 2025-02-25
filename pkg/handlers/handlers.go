@@ -40,7 +40,7 @@ func parseJson(r *http.Request, m any) error {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(m); err != nil {
-		return fmt.Errorf("failed to parse json: %w\n", err)
+		return fmt.Errorf("failed to parse json: %w", err)
 	}
 	return nil
 }
@@ -48,7 +48,7 @@ func parseJson(r *http.Request, m any) error {
 func parseToInt(value string) (int, error) {
 	n, err := strconv.Atoi(value)
 	if err != nil {
-		return 0, fmt.Errorf("invalid number: %w\n", err)
+		return 0, fmt.Errorf("invalid number: %w", err)
 	}
 	return n, nil
 }
@@ -57,7 +57,7 @@ func RegisterRoutes(a *app.App) error {
 	handlers := GetHandlers()
 	for _, h := range handlers {
 		if err := h.Init(a); err != nil {
-			return fmt.Errorf("failed to initialize handler: %w\n", err)
+			return fmt.Errorf("failed to initialize handler: %w", err)
 		}
 		h.Routes()
 	}

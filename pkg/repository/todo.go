@@ -1,4 +1,4 @@
-package store
+package repository
 
 import (
 	"context"
@@ -7,14 +7,6 @@ import (
 
 	"go-starter-template/pkg/entity"
 )
-
-type TodoStore interface {
-	List(ctx context.Context) ([]*entity.Todo, error)
-	Get(ctx context.Context, id int) (*entity.Todo, error)
-	Create(ctx context.Context, todoDto *TodoCreateDto) (*entity.Todo, error)
-	Update(ctx context.Context, todo *entity.Todo, todoDto *TodoCreateDto) (*entity.Todo, error)
-	Delete(ctx context.Context, todo *entity.Todo) error
-}
 
 type TodoCreateDto struct {
 	Title       string `json:"title"`
@@ -25,7 +17,7 @@ type PQTodoStore struct {
 	db *sql.DB
 }
 
-func NewPQTodoStore(db *sql.DB) TodoStore {
+func NewPQTodoStore(db *sql.DB) TodoRepository {
 	return &PQTodoStore{db}
 }
 
@@ -105,7 +97,7 @@ func (t *PQTodoStore) Create(ctx context.Context, todoDto *TodoCreateDto) (*enti
 	return &todo, nil
 }
 
-func (t *PQTodoStore) Update(ctx context.Context, todo *entity.Todo, todoDto *TodoCreateDto) (*entity.Todo, error) {
+func (t *PQTodoStore) Update(ctx context.Context, id int, todoDto *TodoCreateDto) (*entity.Todo, error) {
 	tx, err := t.db.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -116,7 +108,7 @@ func (t *PQTodoStore) Update(ctx context.Context, todo *entity.Todo, todoDto *To
 		"UPDATE todos SET title = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *",
 		todoDto.Title,
 		todoDto.Description,
-		todo.ID,
+		id,
 	).Scan(
 		&updatedTodo.ID,
 		&updatedTodo.Title,

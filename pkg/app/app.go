@@ -11,20 +11,22 @@ import (
 	"syscall"
 	"time"
 
+	"go-starter-template/pkg/infrastructure"
+	"go-starter-template/pkg/repository"
 	"go-starter-template/pkg/service"
-	"go-starter-template/pkg/store"
 
 	_ "github.com/lib/pq"
 )
 
 type App struct {
-	Config           *service.Config
-	Router           service.Router
+	Config           *infrastructure.Config
+	Router           infrastructure.Router
 	DB               *sql.DB
-	Store            *store.Store
-	TemplateRenderer service.TemplateRenderer
+	Repository       *repository.Repository
+	Services         *service.Services
+	TemplateRenderer infrastructure.TemplateRenderer
 	server           *http.Server
-	PasswordHasher   service.PasswordHasher
+	PasswordHasher   infrastructure.PasswordHasher
 }
 
 func Init(ctx context.Context) *App {
@@ -32,7 +34,8 @@ func Init(ctx context.Context) *App {
 
 	a.initConfig()
 	a.initDB()
-	a.initStores()
+	a.initRepositories()
+	a.initServices()
 	a.initRouterMux()
 	a.initFileServer()
 	a.initTemplatingEngine()
@@ -43,11 +46,11 @@ func Init(ctx context.Context) *App {
 }
 
 func (a *App) initPasswordHasher() {
-	a.PasswordHasher = service.NewBcryptPasswordHasher()
+	a.PasswordHasher = infrastructure.NewBcryptPasswordHasher()
 }
 
 func (a *App) initConfig() {
-	conf, err := service.NewConfig()
+	conf, err := infrastructure.NewConfig()
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
@@ -70,12 +73,12 @@ func (a *App) initFileServer() {
 }
 
 func (a *App) initRouterMux() {
-	a.Router = service.NewNetServerMux(a.Config)
+	a.Router = infrastructure.NewNetServerMux(a.Config)
 	log.Println("INFO: router initialized")
 }
 
 func (a *App) initDB() {
-	db, err := service.NewDatabaseConfig(a.Config)
+	db, err := infrastructure.NewDatabaseConfig(a.Config)
 	if err != nil {
 		log.Fatalf("ERROR: failed to open database: %v", err)
 	}
@@ -83,13 +86,18 @@ func (a *App) initDB() {
 	log.Println("INFO: database initialized")
 }
 
-func (a *App) initStores() {
-	a.Store = store.NewDataStore(a.DB)
+func (a *App) initRepositories() {
+	a.Repository = repository.NewRepository(a.DB)
 	log.Println("INFO: stores initialized")
 }
 
+func (a *App) initServices() {
+	a.Services = service.NewServices(a.Repository)
+	log.Println("INFO: services initialized")
+}
+
 func (a *App) initTemplatingEngine() {
-	tr, err := service.NewTemplateRenderer(
+	tr, err := infrastructure.NewTemplateRenderer(
 		"web/templates/base.html",
 		"web/templates/layouts",
 		"web/templates/pages",
@@ -115,10 +123,10 @@ func (a *App) GracefulShutdown(ctx context.Context) {
 
 	log.Println("INFO: shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	if err := a.server.Shutdown(ctx); err != nil {
+	if err := a.server.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("ERROR: failed to shutdown server: %v", err)
 	}
 
