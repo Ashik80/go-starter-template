@@ -1,4 +1,4 @@
-package store
+package repository
 
 import (
 	"context"
@@ -10,18 +10,11 @@ import (
 	"github.com/google/uuid"
 )
 
-type SessionStore interface {
-	Create(ctx context.Context, user *entity.User, expiresAt time.Time) (*entity.Session, error)
-	Get(ctx context.Context, sessionId string) (*entity.Session, error)
-	GetWithUser(ctx context.Context, sessionId string) (*entity.Session, error)
-	Delete(ctx context.Context, sessionId string) error
-}
-
 type PQSessionStore struct {
 	db *sql.DB
 }
 
-func NewPQSessionStore(db *sql.DB) SessionStore {
+func NewPQSessionStore(db *sql.DB) SessionRepository {
 	return &PQSessionStore{db}
 }
 
@@ -51,7 +44,7 @@ func (s *PQSessionStore) Create(ctx context.Context, user *entity.User, expiresA
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			return nil, fmt.Errorf("failed to rollback transaction: %w; original error: %w", rollbackErr, err)
 		}
-		return nil, fmt.Errorf("failed to create session for user %s: %w\n", user.Email, err)
+		return nil, fmt.Errorf("failed to create session for user %s: %w", user.Email, err)
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -74,7 +67,7 @@ func (s *PQSessionStore) Get(ctx context.Context, sessionId string) (*entity.Ses
 		return nil, newNotFoundError("session")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get session: %w\n", err)
+		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 	return &session, nil
 }
@@ -105,7 +98,7 @@ func (s *PQSessionStore) GetWithUser(ctx context.Context, sessionId string) (*en
 		return nil, newNotFoundError("session")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get session: %w\n", err)
+		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 	session.User = &user
 	return &session, nil
@@ -122,7 +115,7 @@ func (s *PQSessionStore) Delete(ctx context.Context, sessionId string) error {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
 			return fmt.Errorf("failed to rollback transaction: %w; original error: %w", rollbackErr, err)
 		}
-		return fmt.Errorf("failed to delete session: %w\n", err)
+		return fmt.Errorf("failed to delete session: %w", err)
 	}
 
 	if err = tx.Commit(); err != nil {

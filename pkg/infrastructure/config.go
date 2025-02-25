@@ -1,4 +1,4 @@
-package service
+package infrastructure
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ type (
 
 func NewConfig() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
-		return nil, fmt.Errorf("failed to load .env file %w\n", err)
+		return nil, fmt.Errorf("failed to load .env file %w", err)
 	}
 
 	config := &Config{

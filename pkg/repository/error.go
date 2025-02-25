@@ -1,4 +1,4 @@
-package store
+package repository
 
 type NotFoundError struct {
 	label string

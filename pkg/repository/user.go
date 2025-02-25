@@ -1,4 +1,4 @@
-package store
+package repository
 
 import (
 	"context"
@@ -8,16 +8,11 @@ import (
 	"go-starter-template/pkg/entity"
 )
 
-type UserStore interface {
-	Create(ctx context.Context, email string, passwordHash string) (*entity.User, error)
-	GetByEmail(ctx context.Context, email string) (*entity.User, error)
-}
-
 type PQUserStore struct {
 	db *sql.DB
 }
 
-func NewPQUserStore(db *sql.DB) UserStore {
+func NewPQUserStore(db *sql.DB) UserRepository {
 	return &PQUserStore{db}
 }
 

@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"go-starter-template/pkg/app"
+	"go-starter-template/pkg/infrastructure"
 	"go-starter-template/pkg/page"
-	"go-starter-template/pkg/service"
 )
 
 type HomeHandler struct {
-	service.TemplateRenderer
-	service.Router
+	infrastructure.TemplateRenderer
+	infrastructure.Router
 }
 
 func init() {
