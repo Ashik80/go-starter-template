@@ -5,11 +5,10 @@ import (
 
 	"go-starter-template/pkg/app"
 	"go-starter-template/pkg/infrastructure"
-	"go-starter-template/pkg/page"
+	"go-starter-template/pkg/tmpl"
 )
 
 type HomeHandler struct {
-	infrastructure.TemplateRenderer
 	infrastructure.Router
 }
 
@@ -19,7 +18,6 @@ func init() {
 
 func (h *HomeHandler) Init(a *app.App) error {
 	h.Router = a.Router
-	h.TemplateRenderer = a.TemplateRenderer
 	return nil
 }
 
@@ -28,7 +26,7 @@ func (h *HomeHandler) Routes() {
 }
 
 func (h *HomeHandler) Index(w http.ResponseWriter, r *http.Request) {
-	p := page.NewHomePage()
+	p := tmpl.NewHomePage()
 	w.WriteHeader(200)
-	h.Render(w, p)
+	p.Execute(w, nil)
 }

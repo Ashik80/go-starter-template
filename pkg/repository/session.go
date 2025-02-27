@@ -63,9 +63,6 @@ func (s *PQSessionStore) Get(ctx context.Context, sessionId string) (*entity.Ses
 		&session.UpdatedAt,
 	)
 
-	if err != nil && err == sql.ErrNoRows {
-		return nil, newNotFoundError("session")
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
@@ -94,9 +91,6 @@ func (s *PQSessionStore) GetWithUser(ctx context.Context, sessionId string) (*en
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
-	if err != nil && err == sql.ErrNoRows {
-		return nil, newNotFoundError("session")
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}

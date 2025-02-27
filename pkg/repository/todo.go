@@ -56,9 +56,6 @@ func (t *PQTodoStore) Get(ctx context.Context, id int) (*entity.Todo, error) {
 		&todo.CreatedAt,
 		&todo.UpdatedAt,
 	)
-	if err != nil && err == sql.ErrNoRows {
-		return nil, newNotFoundError("todo")
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan todo: %w", err)
 	}

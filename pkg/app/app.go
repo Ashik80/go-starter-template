@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"go-starter-template/pkg/infrastructure"
+	"go-starter-template/pkg/infrastructure/renderer"
 	"go-starter-template/pkg/repository"
 	"go-starter-template/pkg/service"
 
@@ -19,14 +20,13 @@ import (
 )
 
 type App struct {
-	Config           *infrastructure.Config
-	Router           infrastructure.Router
-	DB               *sql.DB
-	Repository       *repository.Repository
-	Services         *service.Services
-	TemplateRenderer infrastructure.TemplateRenderer
-	server           *http.Server
-	PasswordHasher   infrastructure.PasswordHasher
+	Config         *infrastructure.Config
+	Router         infrastructure.Router
+	DB             *sql.DB
+	Repository     *repository.Repository
+	Services       *service.Services
+	server         *http.Server
+	PasswordHasher infrastructure.PasswordHasher
 }
 
 func Init(ctx context.Context) *App {
@@ -97,17 +97,11 @@ func (a *App) initServices() {
 }
 
 func (a *App) initTemplatingEngine() {
-	tr, err := infrastructure.NewTemplateRenderer(
-		"web/templates/base.html",
-		"web/templates/layouts",
-		"web/templates/pages",
-		"web/templates/partials",
-	)
+	err := renderer.InitBaseTemplate()
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
-	a.TemplateRenderer = tr
-	log.Println("INFO: templating engine initialized")
+	renderer.RegisterTemplates()
 }
 
 func (a *App) Serve() error {

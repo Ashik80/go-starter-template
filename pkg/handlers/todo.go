@@ -6,15 +6,18 @@ import (
 	"strings"
 
 	"go-starter-template/pkg/app"
+	"go-starter-template/pkg/entity"
+	"go-starter-template/pkg/form"
 	"go-starter-template/pkg/infrastructure"
+	"go-starter-template/pkg/infrastructure/renderer"
 	"go-starter-template/pkg/middlewares"
-	"go-starter-template/pkg/page"
 	"go-starter-template/pkg/service"
+	"go-starter-template/pkg/tmpl"
+	partialTmpl "go-starter-template/pkg/tmpl/partials"
 )
 
 type TodoHandler struct {
 	infrastructure.Router
-	infrastructure.TemplateRenderer
 	todoService    service.TodoService
 	authMiddleware middlewares.MiddlewareFunc
 }
@@ -27,7 +30,6 @@ func (t *TodoHandler) Init(a *app.App) error {
 	t.Router = a.Router
 	t.todoService = a.Services.Todo
 	t.authMiddleware = middlewares.AuthMiddleware(a.Config.Env, a.Services.Session)
-	t.TemplateRenderer = a.TemplateRenderer
 	return nil
 }
 
@@ -61,76 +63,84 @@ func (t *TodoHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p := page.NewTodoListPage()
+	p := tmpl.NewTodosPage()
+	pageData := &tmpl.TodosPageData{
+		Form:  form.NewTodoCreateForm(r),
+		Todos: []*entity.Todo{},
+	}
 
 	if err != nil {
-		p.Error = err.Error()
+		pageData.Error = err.Error()
 		w.WriteHeader(500)
-		t.Render(w, p)
+		p.Execute(w, pageData)
 		return
 	}
 
-	todoListPageData := page.NewTodoListPageData(r)
-	p.Data = todoListPageData
-	todoListPageData.Todos = todos
+	pageData.Todos = todos
 
 	w.WriteHeader(200)
-	t.Render(w, p)
+	p.Execute(w, pageData)
 }
 
 func (t *TodoHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id, err := parseToInt(infrastructure.GetParam(r, "id"))
 	if err != nil {
-		w.WriteHeader(400)
 		w.Header().Add("Hx-Location", "/todos")
+		w.WriteHeader(400)
 		return
 	}
-
-	p := page.NewTodoPage(r)
 
 	todo, err := t.todoService.GetTodo(r.Context(), id)
 	if err != nil {
-		p.Error = err.Error()
+		w.Header().Add("Hx-Location", "/todos")
 		w.WriteHeader(404)
-		t.Render(w, p)
 		return
 	}
 
-	p.Data = page.NewTodoPageData(r, todo)
+	p := tmpl.NewTodoDetailsPage()
+	pageData := &tmpl.TodoDetailsPageData{
+		Todo:       todo,
+		EditForm:   form.NewTodoEditForm(r, todo),
+		DeleteForm: form.NewTodoDeleteForm(r, todo.ID),
+	}
+
 	w.WriteHeader(200)
-	t.Render(w, p)
+	p.Execute(w, pageData)
 }
 
 func (t *TodoHandler) Create(w http.ResponseWriter, r *http.Request) {
 	input := service.CreateTodoInput{}
 
-	form := page.NewTodoCreateForm(r)
-	title := strings.TrimSpace(r.FormValue("title"))
-	description := strings.TrimSpace(r.FormValue("description"))
-	form.Title = title
-	form.Description = description
+	createForm := form.NewTodoCreateForm(r)
+	createForm.Title = strings.TrimSpace(r.FormValue("title"))
+	createForm.Description = strings.TrimSpace(r.FormValue("description"))
 
-	if title == "" {
-		form.Error = "Title is required"
+	createFormTmpl := partialTmpl.NewTodoCreateForm()
+
+	if createForm.Title == "" {
+		createForm.Error = "Title is required"
 		w.WriteHeader(400)
-		t.RenderPartial(w, "todo-create-form", form)
+		createFormTmpl.Execute(w, createForm)
 		return
 	}
 
-	input.Title = title
-	input.Description = description
+	input.Title = createForm.Title
+	input.Description = createForm.Description
 
 	todo, err := t.todoService.CreateTodo(r.Context(), input)
 	if err != nil {
-		form.Error = err.Error()
+		createForm.Error = err.Error()
 		w.WriteHeader(400)
-		t.RenderPartial(w, "todo-create-form", form)
+		createFormTmpl.Execute(w, createForm)
 		return
 	}
 
+	todoPartialOobTmpl := partialTmpl.NewTodoItemOob()
+	createForm = form.NewTodoCreateForm(r)
+
 	w.WriteHeader(201)
-	t.RenderPartial(w, "todo-item-oob", todo)
-	t.RenderPartial(w, "todo-create-form", page.NewTodoCreateForm(r))
+	todoPartialOobTmpl.Execute(w, todo)
+	createFormTmpl.Execute(w, createForm)
 }
 
 func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -150,36 +160,40 @@ func (t *TodoHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	todoForm := page.NewTodoEditForm(r, todo)
-	title := strings.TrimSpace(r.FormValue("title"))
-	description := strings.TrimSpace(r.FormValue("description"))
-	todoForm.Title = title
-	todoForm.Description = description
+	todoEditForm := form.NewTodoEditForm(r, todo)
+	todoEditForm.Title = strings.TrimSpace(r.FormValue("title"))
+	todoEditForm.Description = strings.TrimSpace(r.FormValue("description"))
 
-	if title == "" {
-		todoForm.Error = "Title is required"
+	todoEditFormTmpl := partialTmpl.NewTodoEditForm()
+
+	if todoEditForm.Title == "" {
+		todoEditForm.Error = "Title is required"
 		w.WriteHeader(400)
-		t.RenderPartial(w, "todo-edit-form", todoForm)
+		todoEditFormTmpl.Execute(w, todoEditForm)
 		return
 	}
 
 	input := service.UpdateTodoInput{
-		Title:       title,
-		Description: description,
+		Title:       todoEditForm.Title,
+		Description: todoEditForm.Description,
 	}
 
 	todo, err = t.todoService.UpdateTodo(ctx, id, input)
 	if err != nil {
-		todoForm.Error = err.Error()
+		todoEditForm.Error = err.Error()
 		w.WriteHeader(400)
-		t.RenderPartial(w, "todo-edit-form", todoForm)
+		todoEditFormTmpl.Execute(w, todoEditForm)
 		return
 	}
 
+	todoOobTmpl := partialTmpl.NewTodoDetailsInfoOob()
+	todoEditForm = form.NewTodoEditForm(r, todo)
+
 	w.Header().Add("Hx-Trigger", "close_edit_form")
 	w.WriteHeader(200)
-	t.RenderPartial(w, "todo-details-info-oob", todo)
-	t.RenderPartial(w, "todo-edit-form", page.NewTodoEditForm(r, todo))
+
+	todoOobTmpl.Execute(w, todo)
+	todoEditFormTmpl.Execute(w, todoEditForm)
 }
 
 func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -199,23 +213,14 @@ func (t *TodoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p := page.NewTodoPage(r)
-	templateKey := fmt.Sprintf("%s:%s", p.Layout, p.Name)
-
-	tmpl, err := t.GetTemplate(templateKey)
-	if err != nil {
-		w.WriteHeader(500)
-		t.RenderString(w, err.Error(), nil)
-		return
-	}
-
-	deleteForm := page.NewDeleteForm(r, todo)
+	p := tmpl.NewTodoDetailsPage()
+	tmpl := p.GetPageTemplate()
 
 	if err = t.todoService.DeleteTodo(ctx, todo); err != nil {
-		w.WriteHeader(500)
-		tmplString := fmt.Sprintf("<div id=\"error-message\" hx-swap-oob=\"true\"><p style='color: red;'>%s</p></div>", err.Error())
+		deleteForm := form.NewTodoDeleteForm(r, todo.ID)
 		tmpl.ExecuteTemplate(w, "todo-delete-form", deleteForm)
-		t.RenderString(w, tmplString, nil)
+		tmplString := fmt.Sprintf("<div id=\"error-message\" hx-swap-oob=\"true\"><p style='color: red;'>%s</p></div>", err.Error())
+		renderer.RenderString(w, tmplString, nil)
 		return
 	}
 

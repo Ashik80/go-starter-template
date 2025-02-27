@@ -1,11 +1,10 @@
 {{ block "content" . }}
 <h2 class="text-4xl font-bold dark:text-white mb-5">Todo Details</h2>
 
-{{ if .Data.Todo }}
 <div id="todo-detail-form-container" x-data="{ isEditMode: false }">
   <div id="details" class="mb-5" x-show="!isEditMode">
     <div id="details-info" class="mb-5">
-      {{ template "todo-details-info" .Data.Todo }}
+      {{ template "todo-details-info" .Todo }}
     </div>
     <div class="flex gap-1">
       <button
@@ -16,14 +15,13 @@
       >
         Edit
       </button>
-      {{ template "todo-delete-form" .Data.DeleteForm }}
+      {{ template "todo-delete-form" .DeleteForm }}
     </div>
   </div>
   <div id="edit-form" x-show="isEditMode">
-    {{ template "todo-edit-form" .Data.Form }}
+    {{ template "todo-edit-form" .EditForm }}
   </div>
 </div>
-{{ end }}
 
 <div id="error-message">
   {{ if .Error }}

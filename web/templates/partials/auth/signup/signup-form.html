@@ -78,16 +78,16 @@
         <line x1="1" y1="12" x2="23" y2="12" />
       </svg>
     </div>
-    {{ if .Error.Password.Validations }}
+    {{ if .Error.Password }}
     <ul class="text-red-400 mt-2 list-disc list-inside">
-      {{ range .Error.Password.Validations }}
+      {{ range .Error.Password }}
       <li>{{ . }}</li>
       {{ end }}
     </ul>
     <!--prettier-ignore-->
     {{ end }}
-    {{ if .Error.ErrorMessage }}
-    <p class="text-red-400">{{ .Error.ErrorMessage }}</p>
+    {{ if .FormError }}
+    <p class="text-red-400">{{ .FormError }}</p>
     {{ end }}
   </div>
 

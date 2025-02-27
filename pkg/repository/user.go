@@ -44,9 +44,6 @@ func (s *PQUserStore) GetByEmail(ctx context.Context, email string) (*entity.Use
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
-	if err != nil && err == sql.ErrNoRows {
-		return nil, newNotFoundError("user")
-	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}

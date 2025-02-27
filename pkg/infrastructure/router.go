@@ -178,7 +178,7 @@ func (n *NetServerMux) Route(pattern string, fn func(r Router)) Router {
 
 func GetParam(r *http.Request, paramName string) string {
 	ctx := r.Context()
-	if params, ok := ctx.Value("params").(map[string]string); ok {
+	if params, ok := ctx.Value(paramsContextKey).(map[string]string); ok {
 		return params[paramName]
 	}
 	return ""
