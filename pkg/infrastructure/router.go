@@ -25,6 +25,10 @@ type Router interface {
 	// refer to chi's doc for more interfaces. https://github.com/go-chi/chi
 }
 
+type contextKey string
+
+const paramsContextKey contextKey = "params"
+
 type Route struct {
 	handler    http.Handler
 	paramNames []string
@@ -57,10 +61,6 @@ func NewNetServerMux(conf *Config) *NetServerMux {
 	return n
 }
 
-type contextKey string
-
-const paramsContextKey contextKey = "params"
-
 func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h := n.applyMiddlewares(n.mux)
 
@@ -77,7 +77,6 @@ func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			methodMatches := true
 			path := k
 			if r.Method != "GET" {
 				if !strings.HasPrefix(k, r.Method+" ") {
@@ -87,7 +86,7 @@ func (n *NetServerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 
 			matched, params := matchRoute(path, v.paramNames, r.URL.Path)
-			if matched && methodMatches {
+			if matched {
 				ctx := context.WithValue(r.Context(), paramsContextKey, params)
 				r = r.WithContext(ctx)
 				route = v
