@@ -4,7 +4,7 @@ import "html/template"
 
 var pages map[string]*template.Template
 
-func RegisterTemplates() {
+func RegisterPageTemplates() {
 	pages = map[string]*template.Template{
 		"home":         ParseTemplate("home"),
 		"todos":        ParseTemplate("todos"),

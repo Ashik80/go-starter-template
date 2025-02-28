@@ -101,7 +101,7 @@ func (a *App) initTemplatingEngine() {
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
-	renderer.RegisterTemplates()
+	renderer.RegisterPageTemplates()
 }
 
 func (a *App) Serve() error {

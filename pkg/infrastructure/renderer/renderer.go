@@ -12,8 +12,15 @@ import (
 
 var baseTemplate *template.Template
 
+const (
+	baseFile          = "web/templates/base.html"
+	layoutsDir        = "web/templates/layouts"
+	pagesDir          = "web/templates/pages"
+	partialsDir       = "web/templates/partials"
+	defaultLayoutFile = layoutsDir + "/main.html"
+)
+
 func InitBaseTemplate() error {
-	baseFile := "web/templates/base.html"
 	partials, err := getPartialFiles()
 	if err != nil {
 		return err
@@ -28,11 +35,11 @@ func InitBaseTemplate() error {
 }
 
 func ParseTemplate(page string, layout ...string) *template.Template {
-	layoutFile := "web/templates/layouts/main.html"
+	layoutFile := defaultLayoutFile
 	if len(layout) > 0 && layout[0] != "" {
-		layoutFile = "web/templates/layouts/" + layout[0] + ".html"
+		layoutFile = layoutsDir + "/" + layout[0] + ".html"
 	}
-	file := "web/templates/pages/" + page + ".html"
+	file := pagesDir + "/" + page + ".html"
 
 	tmpl, err := baseTemplate.Clone()
 	if err != nil {
@@ -77,13 +84,12 @@ func walkTemplateFiles(dir string) ([]string, error) {
 }
 
 func getPartialFiles() ([]string, error) {
-	partialDir := "web/templates/partials"
-	files, err := walkTemplateFiles(partialDir)
+	files, err := walkTemplateFiles(partialsDir)
 	if err != nil {
 		return nil, err
 	}
 	if len(files) == 0 {
-		return nil, fmt.Errorf("no partial files found in %s", partialDir)
+		return nil, fmt.Errorf("no partial files found in %s", partialsDir)
 	}
 	return files, nil
 }
