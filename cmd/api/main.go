@@ -5,16 +5,12 @@ import (
 	"log"
 	"net/http"
 
-	"go-starter-template/pkg/app"
-	"go-starter-template/pkg/handlers"
+	"go-starter-template/pkg/bootstrap"
 )
 
 func main() {
 	ctx := context.Background()
-
-	app := app.Init(ctx)
-
-	handlers.RegisterRoutes(app)
+	app := bootstrap.Init(ctx)
 
 	go func() {
 		if err := app.Serve(); err != nil && err != http.ErrServerClosed {
