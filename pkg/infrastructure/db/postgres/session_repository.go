@@ -4,9 +4,32 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
+
 	"go-starter-template/pkg/domain/entities"
 	"go-starter-template/pkg/domain/repositories"
+	"go-starter-template/pkg/domain/valueobject"
+
+	"github.com/google/uuid"
 )
+
+type SessionDTO struct {
+	ID        uuid.UUID
+	UserID    int
+	ExpiresAt time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+func (s SessionDTO) toSession() *entities.Session {
+	return &entities.Session{
+		ID:        s.ID,
+		ExpiresAt: valueobject.NewTime(s.ExpiresAt),
+		CreatedAt: valueobject.NewTime(s.CreatedAt),
+		UpdatedAt: valueobject.NewTime(s.UpdatedAt),
+		User:      nil,
+	}
+}
 
 type PQSessionStore struct {
 	db *sql.DB
@@ -22,8 +45,7 @@ func (s *PQSessionStore) Create(ctx context.Context, session *entities.Session) 
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	var createdSession entities.Session
-	var userId int
+	var createdSession SessionDTO
 
 	err = tx.QueryRowContext(ctx,
 		"INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3) RETURNING *",
@@ -32,7 +54,7 @@ func (s *PQSessionStore) Create(ctx context.Context, session *entities.Session) 
 		session.ExpiresAt.ToTime(),
 	).Scan(
 		&createdSession.ID,
-		&userId,
+		&createdSession.UserID,
 		&createdSession.ExpiresAt,
 		&createdSession.CreatedAt,
 		&createdSession.UpdatedAt,
@@ -49,11 +71,14 @@ func (s *PQSessionStore) Create(ctx context.Context, session *entities.Session) 
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return &createdSession, nil
+	newSession := createdSession.toSession()
+	newSession.AddUser(session.User)
+
+	return newSession, nil
 }
 
 func (s *PQSessionStore) Get(ctx context.Context, sessionId string) (*entities.Session, error) {
-	var session entities.Session
+	var session SessionDTO
 	err := s.db.QueryRowContext(ctx, "SELECT * FROM sessions WHERE id = $1", sessionId).Scan(
 		&session.ID,
 		&session.ExpiresAt,
@@ -64,12 +89,13 @@ func (s *PQSessionStore) Get(ctx context.Context, sessionId string) (*entities.S
 	if err != nil {
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
-	return &session, nil
+	return session.toSession(), nil
 }
 
 func (s *PQSessionStore) GetWithUser(ctx context.Context, sessionId string) (*entities.Session, error) {
-	var session entities.Session
-	var user entities.User
+	var sessionDTO SessionDTO
+	var userDTO UserDTO
+
 	query := `
 		SELECT
 			sessions.id, sessions.expires_at, sessions.created_at, sessions.updated_at,
@@ -79,21 +105,24 @@ func (s *PQSessionStore) GetWithUser(ctx context.Context, sessionId string) (*en
 		WHERE sessions.id = $1
 	`
 	err := s.db.QueryRowContext(ctx, query, sessionId).Scan(
-		&session.ID,
-		&session.ExpiresAt,
-		&session.CreatedAt,
-		&session.UpdatedAt,
-		&user.ID,
-		&user.Email,
-		&user.Password,
-		&user.CreatedAt,
-		&user.UpdatedAt,
+		&sessionDTO.ID,
+		&sessionDTO.ExpiresAt,
+		&sessionDTO.CreatedAt,
+		&sessionDTO.UpdatedAt,
+		&userDTO.ID,
+		&userDTO.Email,
+		&userDTO.Password,
+		&userDTO.CreatedAt,
+		&userDTO.UpdatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
-	session.User = &user
-	return &session, nil
+
+	session := sessionDTO.toSession()
+	session.AddUser(userDTO.toUser())
+
+	return session, nil
 }
 
 func (s *PQSessionStore) Delete(ctx context.Context, session *entities.Session) error {

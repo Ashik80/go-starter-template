@@ -23,14 +23,12 @@ func NewSessionService(sessionRepository repositories.SessionRepository) interfa
 func (s *SessionService) CreateSession(ctx context.Context, sessionCommand *command.CreateSessionCommand) (*command.CreateSessionCommandResult, error) {
 	newSession := entities.NewSession(sessionCommand.User)
 	if sessionCommand.ExtendByHour > 0 {
-		newSession.ExtendByHour(sessionCommand.ExtendByHour)
+		newSession.ExpiresAt = newSession.ExpiresAt.ExtendByHour(sessionCommand.ExtendByHour)
 	}
 	session, err := s.sessionRepository.Create(ctx, newSession)
 	if err != nil {
 		return nil, err
 	}
-
-	session.AddUser(sessionCommand.User)
 
 	return command.NewCreateSessionCommandResult(session), nil
 }

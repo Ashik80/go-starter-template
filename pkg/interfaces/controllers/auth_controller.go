@@ -8,7 +8,7 @@ import (
 
 	"go-starter-template/pkg/application/command"
 	"go-starter-template/pkg/application/interfaces"
-	"go-starter-template/pkg/domain/entities"
+	"go-starter-template/pkg/domain/valueobject"
 	"go-starter-template/pkg/httputil"
 	"go-starter-template/pkg/infrastructure/config"
 	"go-starter-template/pkg/infrastructure/renderer"
@@ -122,12 +122,12 @@ func (ac *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		if err == entities.ErrEmailIsInvalid {
+		if err == valueobject.ErrEmailIsInvalid {
 			form.Error.Email = err.Error()
 		} else {
 			form.FormError = err.Error()
 		}
-		var pve *entities.PasswordValidationError
+		var pve *valueobject.PasswordValidationError
 		if errors.As(err, &pve) {
 			form.Error.Password = pve.Errors
 		}

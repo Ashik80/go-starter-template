@@ -1,11 +1,16 @@
 package entities
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 
 	"go-starter-template/pkg/domain/valueobject"
+)
+
+var (
+	ErrSessionIsRequired = errors.New("Session is required")
 )
 
 type Session struct {
@@ -17,11 +22,12 @@ type Session struct {
 }
 
 func NewSession(user *User) *Session {
+	currentTime := valueobject.NewCurrentTime()
 	return &Session{
 		ID:        uuid.New(),
-		ExpiresAt: valueobject.Time(time.Now().Add(time.Hour * 1)),
-		CreatedAt: valueobject.Time(time.Now()),
-		UpdatedAt: valueobject.Time(time.Now()),
+		ExpiresAt: currentTime.ExtendByHour(1),
+		CreatedAt: currentTime,
+		UpdatedAt: currentTime,
 		User:      user,
 	}
 }
@@ -30,10 +36,22 @@ func (s *Session) Expired() bool {
 	return time.Now().After(s.ExpiresAt.ToTime())
 }
 
-func (s *Session) ExtendByHour(hours int) {
-	s.ExpiresAt = valueobject.Time(time.Now().Add(time.Hour * time.Duration(hours)))
+func (s *Session) SetExpiresAt(expiresAt valueobject.Time) error {
+	if s == nil {
+		return ErrSessionIsRequired
+	}
+	s.ExpiresAt = expiresAt
+	s.UpdatedAt = valueobject.NewCurrentTime()
+	return nil
 }
 
-func (s *Session) AddUser(user *User) {
+func (s *Session) AddUser(user *User) error {
+	if s.User != nil {
+		return ErrSessionIsRequired
+	}
+
 	s.User = user
+	s.UpdatedAt = valueobject.NewCurrentTime()
+
+	return nil
 }

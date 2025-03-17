@@ -35,7 +35,7 @@ func (s *UserService) Login(ctx context.Context, loginCommand *command.CreateLog
 		return nil, err
 	}
 
-	if err = s.passwordHasher.CompareHashAndPassword(user.Password, loginCommand.Password); err != nil {
+	if err = s.passwordHasher.CompareHashAndPassword(user.Password.ToString(), loginCommand.Password); err != nil {
 		return nil, err
 	}
 
@@ -68,8 +68,8 @@ func (s *UserService) Signup(ctx context.Context, signupCommand *command.CreateS
 		return nil, entities.ErrUserAlreadyExists
 	}
 
-	user := entities.NewUser(signupCommand.Email, signupCommand.Password)
-	if err = user.Validate(); err != nil {
+	user, err := entities.NewUser(signupCommand.Email, signupCommand.Password)
+	if err != nil {
 		return nil, err
 	}
 

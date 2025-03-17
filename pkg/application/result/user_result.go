@@ -12,7 +12,7 @@ type UserResult struct {
 func NewUserResult(user *entities.User) *UserResult {
 	return &UserResult{
 		ID:        user.ID,
-		Email:     user.Email,
+		Email:     user.Email.ToString(),
 		CreatedAt: user.CreatedAt.ToString(),
 		UpdatedAt: user.UpdatedAt.ToString(),
 	}

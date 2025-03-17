@@ -39,8 +39,8 @@ func (s *todoService) GetTodo(ctx context.Context, id int) (*query.TodoQueryResu
 }
 
 func (s *todoService) CreateTodo(ctx context.Context, todoCommand *command.CreateTodoCommand) (*command.CreateTodoCommandResult, error) {
-	todo := entities.NewTodo(todoCommand.Title, todoCommand.Description)
-	if err := todo.Validate(); err != nil {
+	todo, err := entities.NewTodo(todoCommand.Title, todoCommand.Description)
+	if err != nil {
 		return nil, err
 	}
 
@@ -53,13 +53,12 @@ func (s *todoService) CreateTodo(ctx context.Context, todoCommand *command.Creat
 }
 
 func (s *todoService) UpdateTodo(ctx context.Context, todoCommand *command.UpdateTodoCommand) (*command.UpdateTodoCommandResult, error) {
-	updatedTodo := entities.NewTodo(todoCommand.Title, todoCommand.Description)
-	updatedTodo.ID = todoCommand.ID
-	if err := updatedTodo.Validate(); err != nil {
+	updatedTodo, err := entities.NewTodoWithID(todoCommand.ID, todoCommand.Title, todoCommand.Description)
+	if err != nil {
 		return nil, err
 	}
 
-	updatedTodo, err := s.todoRepository.Update(ctx, updatedTodo)
+	updatedTodo, err = s.todoRepository.Update(ctx, updatedTodo)
 	if err != nil {
 		return nil, err
 	}

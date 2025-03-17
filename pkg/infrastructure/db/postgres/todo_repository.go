@@ -4,10 +4,30 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"go-starter-template/pkg/domain/entities"
 	"go-starter-template/pkg/domain/repositories"
+	"go-starter-template/pkg/domain/valueobject"
 )
+
+type TodoDTO struct {
+	ID          int
+	Title       string
+	Description string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+func (t TodoDTO) toTodo() *entities.Todo {
+	return &entities.Todo{
+		ID:          t.ID,
+		Title:       t.Title,
+		Description: t.Description,
+		CreatedAt:   valueobject.NewTime(t.CreatedAt),
+		UpdatedAt:   valueobject.NewTime(t.UpdatedAt),
+	}
+}
 
 type PQTodoRepository struct {
 	db *sql.DB
@@ -26,7 +46,7 @@ func (t *PQTodoRepository) List(ctx context.Context) ([]*entities.Todo, error) {
 
 	todos := make([]*entities.Todo, 0)
 	for rows.Next() {
-		var todo entities.Todo
+		var todo TodoDTO
 		if err := rows.Scan(
 			&todo.ID,
 			&todo.Title,
@@ -36,7 +56,7 @@ func (t *PQTodoRepository) List(ctx context.Context) ([]*entities.Todo, error) {
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan todo: %w", err)
 		}
-		todos = append(todos, &todo)
+		todos = append(todos, todo.toTodo())
 	}
 	return todos, nil
 }
@@ -44,7 +64,7 @@ func (t *PQTodoRepository) List(ctx context.Context) ([]*entities.Todo, error) {
 func (t *PQTodoRepository) Get(ctx context.Context, id int) (*entities.Todo, error) {
 	row := t.db.QueryRowContext(ctx, "SELECT * FROM todos WHERE id = $1", id)
 
-	var todo entities.Todo
+	var todo TodoDTO
 	err := row.Scan(
 		&todo.ID,
 		&todo.Title,
@@ -55,7 +75,7 @@ func (t *PQTodoRepository) Get(ctx context.Context, id int) (*entities.Todo, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to scan todo: %w", err)
 	}
-	return &todo, nil
+	return todo.toTodo(), nil
 }
 
 func (t *PQTodoRepository) Create(ctx context.Context, todo *entities.Todo) (*entities.Todo, error) {
@@ -64,7 +84,7 @@ func (t *PQTodoRepository) Create(ctx context.Context, todo *entities.Todo) (*en
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	var createdTodo entities.Todo
+	var createdTodo TodoDTO
 	err = tx.QueryRowContext(ctx,
 		"INSERT INTO todos (title, description) VALUES ($1, $2) RETURNING *",
 		todo.Title,
@@ -87,7 +107,7 @@ func (t *PQTodoRepository) Create(ctx context.Context, todo *entities.Todo) (*en
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	return &createdTodo, nil
+	return createdTodo.toTodo(), nil
 }
 
 func (t *PQTodoRepository) Update(ctx context.Context, todo *entities.Todo) (*entities.Todo, error) {
@@ -96,7 +116,7 @@ func (t *PQTodoRepository) Update(ctx context.Context, todo *entities.Todo) (*en
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
 
-	var updatedTodo entities.Todo
+	var updatedTodo TodoDTO
 	err = tx.QueryRowContext(ctx,
 		"UPDATE todos SET title = $1, description = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *",
 		todo.Title,
@@ -120,7 +140,7 @@ func (t *PQTodoRepository) Update(ctx context.Context, todo *entities.Todo) (*en
 	if err = tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	return &updatedTodo, nil
+	return updatedTodo.toTodo(), nil
 }
 
 func (t *PQTodoRepository) Delete(ctx context.Context, todo *entities.Todo) error {
