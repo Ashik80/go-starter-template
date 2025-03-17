@@ -26,8 +26,6 @@ type App struct {
 	Config *config.Config
 	Router router.Router
 	DB     *sql.DB
-	// Repository *repository.Repository
-	// Services   *service.Services
 	server *http.Server
 }
 
@@ -35,6 +33,7 @@ func Init(ctx context.Context) *App {
 	a := new(App)
 
 	// maintain the order to avoid nil pointer exception
+	a.initLogger()
 	a.initConfig()
 	a.initDB()
 	a.initTemplatingEngine()
@@ -47,7 +46,7 @@ func Init(ctx context.Context) *App {
 }
 
 func (a *App) initControllers() {
-	sessionRepo := postgres.NewPQSessionStore(a.DB)
+	sessionRepo := postgres.NewPQSessionRepository(a.DB)
 	sessionService := services.NewSessionService(sessionRepo)
 
 	controllers.NewHealthController(a.Router, a.Config, a.DB)
@@ -58,9 +57,16 @@ func (a *App) initControllers() {
 	controllers.NewTodoController(a.Router, todoService, sessionService, a.Config)
 
 	passwordHasher := security.NewBcryptPasswordHasher()
-	userRepo := postgres.NewPQUserStore(a.DB)
+	userRepo := postgres.NewPQUserRepository(a.DB)
 	userService := services.NewUserService(userRepo, passwordHasher, sessionService)
 	controllers.NewAuthController(a.Router, userService, a.Config)
+
+	log.Println("INFO: controllers bootstrapped")
+}
+
+func (a *App) initLogger() {
+	log.SetOutput(os.Stdout)
+	log.SetFlags(log.Ldate | log.Ltime)
 }
 
 func (a *App) initConfig() {
@@ -69,6 +75,7 @@ func (a *App) initConfig() {
 		log.Fatalf("ERROR: %v", err)
 	}
 	a.Config = conf
+	log.Println("INFO: configuration initialized")
 }
 
 func (a *App) initApplicationServer() {

@@ -31,15 +31,15 @@ func (s SessionDTO) toSession() *entities.Session {
 	}
 }
 
-type PQSessionStore struct {
+type PQSessionRepository struct {
 	db *sql.DB
 }
 
-func NewPQSessionStore(db *sql.DB) repositories.SessionRepository {
-	return &PQSessionStore{db}
+func NewPQSessionRepository(db *sql.DB) repositories.SessionRepository {
+	return &PQSessionRepository{db}
 }
 
-func (s *PQSessionStore) Create(ctx context.Context, session *entities.Session) (*entities.Session, error) {
+func (s *PQSessionRepository) Create(ctx context.Context, session *entities.Session) (*entities.Session, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -77,7 +77,7 @@ func (s *PQSessionStore) Create(ctx context.Context, session *entities.Session) 
 	return newSession, nil
 }
 
-func (s *PQSessionStore) Get(ctx context.Context, sessionId string) (*entities.Session, error) {
+func (s *PQSessionRepository) Get(ctx context.Context, sessionId string) (*entities.Session, error) {
 	var session SessionDTO
 	err := s.db.QueryRowContext(ctx, "SELECT * FROM sessions WHERE id = $1", sessionId).Scan(
 		&session.ID,
@@ -92,7 +92,7 @@ func (s *PQSessionStore) Get(ctx context.Context, sessionId string) (*entities.S
 	return session.toSession(), nil
 }
 
-func (s *PQSessionStore) GetWithUser(ctx context.Context, sessionId string) (*entities.Session, error) {
+func (s *PQSessionRepository) GetWithUser(ctx context.Context, sessionId string) (*entities.Session, error) {
 	var sessionDTO SessionDTO
 	var userDTO UserDTO
 
@@ -125,7 +125,7 @@ func (s *PQSessionStore) GetWithUser(ctx context.Context, sessionId string) (*en
 	return session, nil
 }
 
-func (s *PQSessionStore) Delete(ctx context.Context, session *entities.Session) error {
+func (s *PQSessionRepository) Delete(ctx context.Context, session *entities.Session) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)

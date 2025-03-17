@@ -31,15 +31,15 @@ func (u UserDTO) toUser() *entities.User {
 	}
 }
 
-type PQUserStore struct {
+type PQUserRepository struct {
 	db *sql.DB
 }
 
-func NewPQUserStore(db *sql.DB) repositories.UserRepository {
-	return &PQUserStore{db}
+func NewPQUserRepository(db *sql.DB) repositories.UserRepository {
+	return &PQUserRepository{db}
 }
 
-func (s *PQUserStore) Create(ctx context.Context, user *entities.User) (*entities.User, error) {
+func (s *PQUserRepository) Create(ctx context.Context, user *entities.User) (*entities.User, error) {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -71,7 +71,7 @@ func (s *PQUserStore) Create(ctx context.Context, user *entities.User) (*entitie
 	return userDTO.toUser(), nil
 }
 
-func (s *PQUserStore) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
+func (s *PQUserRepository) GetByEmail(ctx context.Context, email string) (*entities.User, error) {
 	var user UserDTO
 	err := s.db.QueryRowContext(ctx, "SELECT * FROM users WHERE email = $1", email).Scan(
 		&user.ID,
