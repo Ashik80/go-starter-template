@@ -10,17 +10,17 @@ import (
 	"go-starter-template/pkg/domain/repositories"
 )
 
-type todoService struct {
+type TodoService struct {
 	todoRepository repositories.TodoRepository
 }
 
 func NewTodoService(repo repositories.TodoRepository) interfaces.TodoService {
-	return &todoService{
+	return &TodoService{
 		todoRepository: repo,
 	}
 }
 
-func (s *todoService) ListTodos(ctx context.Context) (*query.TodoListQueryResult, error) {
+func (s *TodoService) ListTodos(ctx context.Context) (*query.TodoListQueryResult, error) {
 	todos, err := s.todoRepository.List(ctx)
 	if err != nil {
 		return nil, err
@@ -29,7 +29,7 @@ func (s *todoService) ListTodos(ctx context.Context) (*query.TodoListQueryResult
 	return query.NewTodoListQueryResult(todos), nil
 }
 
-func (s *todoService) GetTodo(ctx context.Context, id int) (*query.TodoQueryResult, error) {
+func (s *TodoService) GetTodo(ctx context.Context, id int) (*query.TodoQueryResult, error) {
 	todo, err := s.todoRepository.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (s *todoService) GetTodo(ctx context.Context, id int) (*query.TodoQueryResu
 	return query.NewTodoQueryResult(todo), nil
 }
 
-func (s *todoService) CreateTodo(ctx context.Context, todoCommand *command.CreateTodoCommand) (*command.CreateTodoCommandResult, error) {
+func (s *TodoService) CreateTodo(ctx context.Context, todoCommand *command.CreateTodoCommand) (*command.CreateTodoCommandResult, error) {
 	todo, err := entities.NewTodo(todoCommand.Title, todoCommand.Description)
 	if err != nil {
 		return nil, err
@@ -52,7 +52,7 @@ func (s *todoService) CreateTodo(ctx context.Context, todoCommand *command.Creat
 	return command.NewCreateTodoCommandResult(result), nil
 }
 
-func (s *todoService) UpdateTodo(ctx context.Context, todoCommand *command.UpdateTodoCommand) (*command.UpdateTodoCommandResult, error) {
+func (s *TodoService) UpdateTodo(ctx context.Context, todoCommand *command.UpdateTodoCommand) (*command.UpdateTodoCommandResult, error) {
 	updatedTodo, err := entities.NewTodoWithID(todoCommand.ID, todoCommand.Title, todoCommand.Description)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (s *todoService) UpdateTodo(ctx context.Context, todoCommand *command.Updat
 	return command.NewUpdateTodoCommandResult(updatedTodo), nil
 }
 
-func (s *todoService) DeleteTodo(ctx context.Context, todoCommand *command.DeleteTodoCommand) error {
+func (s *TodoService) DeleteTodo(ctx context.Context, todoCommand *command.DeleteTodoCommand) error {
 	todo, err := s.todoRepository.Get(ctx, todoCommand.ID)
 	if err != nil {
 		return err

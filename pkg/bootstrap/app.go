@@ -11,12 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"go-starter-template/pkg/application/services"
 	"go-starter-template/pkg/infrastructure/config"
 	"go-starter-template/pkg/infrastructure/db/postgres"
+	"go-starter-template/pkg/infrastructure/factories"
 	"go-starter-template/pkg/infrastructure/renderer"
 	"go-starter-template/pkg/infrastructure/router"
-	"go-starter-template/pkg/infrastructure/security"
 	"go-starter-template/pkg/interfaces/controllers"
 
 	_ "github.com/lib/pq"
@@ -46,22 +45,19 @@ func Init(ctx context.Context) *App {
 }
 
 func (a *App) initControllers() {
-	sessionRepo := postgres.NewPQSessionRepository(a.DB)
-	sessionService := services.NewSessionService(sessionRepo)
-
 	controllers.NewHealthController(a.Router, a.Config, a.DB)
 	controllers.NewHomeController(a.Router)
-
-	todoRepo := postgres.NewPQTodoRepository(a.DB)
-	todoService := services.NewTodoService(todoRepo)
-	controllers.NewTodoController(a.Router, todoService, sessionService, a.Config)
-
-	passwordHasher := security.NewBcryptPasswordHasher()
-	userRepo := postgres.NewPQUserRepository(a.DB)
-	userService := services.NewUserService(userRepo, passwordHasher, sessionService)
-	controllers.NewAuthController(a.Router, userService, a.Config)
-
-	log.Println("INFO: controllers bootstrapped")
+	controllers.NewTodoController(
+		a.Router,
+		factories.NewTodoServiceWithPQRepository(a.DB),
+		factories.NewSessionServiceWithPQRepository(a.DB),
+		a.Config,
+	)
+	controllers.NewAuthController(
+		a.Router,
+		factories.NewUserServiceWithPQRepository(a.DB),
+		a.Config,
+	)
 }
 
 func (a *App) initLogger() {
