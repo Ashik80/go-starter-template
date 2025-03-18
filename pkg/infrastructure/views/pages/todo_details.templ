@@ -1,0 +1,73 @@
+package pages
+
+import (
+	"go-starter-template/pkg/application/result"
+	"go-starter-template/pkg/infrastructure/views/components"
+	"go-starter-template/pkg/infrastructure/views/layouts"
+	"strconv"
+)
+
+type TodoDetailsPageData struct {
+	Todo       *result.TodoResult
+	EditForm   *components.TodoCreateFormData
+	DeleteForm *components.TodoDeleteFormData
+	Error      string
+}
+
+func getPath(id int) string {
+	return "/todos/" + strconv.Itoa(id)
+}
+
+templ TodoDetails(data TodoDetailsPageData) {
+	@layouts.MainLayout("Todo Details", getPath(data.Todo.ID)) {
+		<h2 class="text-4xl font-bold dark:text-white mb-5">Todo Details</h2>
+		<div id="todo-detail-form-container" x-data="{ isEditMode: false }">
+			<div id="details" class="mb-5" x-show="!isEditMode">
+				<div id="details-info" class="mb-5">
+					@components.TodoDetailsInfo(data.Todo)
+				</div>
+				<div class="flex gap-1">
+					<button
+						id="edit-button"
+						type="button"
+						@click="isEditMode = true"
+						class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 cursor-pointer"
+					>
+						Edit
+					</button>
+					@components.TodoDeleteForm(data.DeleteForm)
+				</div>
+			</div>
+			<div id="edit-form" x-show="isEditMode">
+				@components.TodoEditForm(data.EditForm)
+			</div>
+		</div>
+		<div id="error-message">
+			if data.Error != "" {
+				<p style="color: red">{ data.Error }</p>
+			}
+		</div>
+		<div hx-boost="true">
+			<a
+				href="/todos"
+				class="text-gray-500 dark:text-gray-400 font-bold flex gap-1"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="22"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<line x1="19" y1="12" x2="5" y2="12"></line>
+					<polyline points="12 5 5 12 12 19"></polyline>
+				</svg>
+				Back to list
+			</a>
+		</div>
+	}
+}

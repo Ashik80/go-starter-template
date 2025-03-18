@@ -3,8 +3,8 @@ package controllers
 import (
 	"net/http"
 
-	"go-starter-template/pkg/infrastructure/renderer"
 	"go-starter-template/pkg/infrastructure/router"
+	"go-starter-template/pkg/infrastructure/views/pages"
 )
 
 type HomeController struct{}
@@ -15,10 +15,5 @@ func NewHomeController(r router.Router) {
 }
 
 func (hc *HomeController) Index(w http.ResponseWriter, r *http.Request) {
-	page := renderer.GetPageTemplate("home")
-	data := map[string]string{
-		"Title": "Home",
-		"Path":  "/",
-	}
-	page.ExecuteTemplate(w, "base", data)
+	pages.Home().Render(r.Context(), w)
 }

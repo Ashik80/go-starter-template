@@ -11,10 +11,10 @@ import (
 	"go-starter-template/pkg/domain/valueobject"
 	"go-starter-template/pkg/httputil"
 	"go-starter-template/pkg/infrastructure/config"
-	"go-starter-template/pkg/infrastructure/renderer"
+	"go-starter-template/pkg/infrastructure/csrf"
 	"go-starter-template/pkg/infrastructure/router"
-
-	"github.com/gorilla/csrf"
+	"go-starter-template/pkg/infrastructure/views/components"
+	"go-starter-template/pkg/infrastructure/views/pages"
 )
 
 type AuthController struct {
@@ -54,27 +54,18 @@ func NewAuthController(r router.Router, userService interfaces.UserService, conf
 }
 
 func (ac *AuthController) LoginView(w http.ResponseWriter, r *http.Request) {
-	page := renderer.GetPageTemplate("login")
-	data := map[string]interface{}{
-		"Title": "Login",
-		"Path":  "/login",
-		"Form": &LoginForm{
-			CSRF: csrf.TemplateField(r),
-		},
-	}
+	form := components.NewLoginFormData(r)
 	w.WriteHeader(200)
-	page.ExecuteTemplate(w, "base", data)
+	pages.Login(form).Render(r.Context(), w)
 }
 
 func (ac *AuthController) Login(w http.ResponseWriter, r *http.Request) {
-	form := &LoginForm{
-		CSRF:     csrf.TemplateField(r),
+	form := &components.LoginFormData{
+		CSRF:     csrf.GetCSRFField(r),
 		Email:    strings.TrimSpace(r.FormValue("email")),
 		Password: strings.TrimSpace(r.FormValue("password")),
 		Remember: r.FormValue("remember"),
 	}
-
-	tmpl := renderer.GetBaseTemplate()
 
 	result, err := ac.userService.Login(r.Context(), &command.CreateLoginCommand{
 		Email:    form.Email,
@@ -85,7 +76,7 @@ func (ac *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		form.Error = err.Error()
 		w.WriteHeader(401)
-		tmpl.ExecuteTemplate(w, "login-form", form)
+		components.LoginForm(form).Render(r.Context(), w)
 		return
 	}
 
@@ -96,26 +87,18 @@ func (ac *AuthController) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ac *AuthController) SignupView(w http.ResponseWriter, r *http.Request) {
-	page := renderer.GetPageTemplate("signup")
-	data := map[string]interface{}{
-		"Title": "Signup",
-		"Path":  "/signup",
-		"Form": &SignupForm{
-			CSRF: csrf.TemplateField(r),
-		},
-	}
+	form := components.NewSignupFormData(r)
 	w.WriteHeader(200)
-	page.ExecuteTemplate(w, "base", data)
+	pages.Signup(form).Render(r.Context(), w)
 }
 
 func (ac *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
-	form := &SignupForm{
-		CSRF:     csrf.TemplateField(r),
+	form := &components.SignupFormData{
+		CSRF:     csrf.GetCSRFField(r),
 		Email:    strings.TrimSpace(r.FormValue("email")),
 		Password: strings.TrimSpace(r.FormValue("password")),
 	}
 
-	tmpl := renderer.GetBaseTemplate()
 	_, err := ac.userService.Signup(r.Context(), &command.CreateSignupCommand{
 		Email:    form.Email,
 		Password: form.Password,
@@ -132,7 +115,7 @@ func (ac *AuthController) Signup(w http.ResponseWriter, r *http.Request) {
 			form.Error.Password = pve.Errors
 		}
 		w.WriteHeader(400)
-		tmpl.ExecuteTemplate(w, "signup-form", form)
+		components.SignupForm(form).Render(r.Context(), w)
 		return
 	}
 
