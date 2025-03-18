@@ -1,0 +1,20 @@
+package views
+
+templ Base(title string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			if title != "" {
+				<title>Go Starter Template - { title }</title>
+			} else {
+				<title>Go Starter Template</title>
+			}
+			@Metatags()
+		</head>
+		<body class="dark:bg-gray-800">
+			{ children... }
+		</body>
+	</html>
+}

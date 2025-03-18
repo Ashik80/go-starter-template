@@ -22,7 +22,10 @@ tailwind-build-dev:
 tailwind-build:
 	@npx @tailwindcss/cli -i ./web/css/styles.css -o ./web/css/output.css
 
-build: tailwind-build
+templ-build:
+	@templ generate
+
+build: templ-build tailwind-build
 	@go build -o bin/main ./cmd/api/main.go
 
 run: build

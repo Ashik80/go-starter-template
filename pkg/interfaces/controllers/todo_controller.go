@@ -2,19 +2,19 @@ package controllers
 
 import (
 	"fmt"
-	"html/template"
 	"net/http"
 	"strings"
-
-	"github.com/gorilla/csrf"
 
 	"go-starter-template/pkg/application/command"
 	"go-starter-template/pkg/application/interfaces"
 	"go-starter-template/pkg/application/result"
 	"go-starter-template/pkg/infrastructure/config"
+	"go-starter-template/pkg/infrastructure/csrf"
 	"go-starter-template/pkg/infrastructure/middlewares"
 	"go-starter-template/pkg/infrastructure/renderer"
 	"go-starter-template/pkg/infrastructure/router"
+	"go-starter-template/pkg/infrastructure/views/components"
+	"go-starter-template/pkg/infrastructure/views/pages"
 	"go-starter-template/pkg/utils"
 )
 
@@ -22,29 +22,16 @@ type TodoController struct {
 	todoService interfaces.TodoService
 }
 
-type TodoCreateForm struct {
-	CSRF        template.HTML
-	ID          int
-	Title       string
-	Description string
-	Error       string
-}
-
-type TodoDeleteForm struct {
-	CSRF template.HTML
-	ID   int
-}
-
 func NewTodoController(r router.Router, todoService interfaces.TodoService, sessionService interfaces.SessionService, config *config.Config) {
 	controller := &TodoController{
 		todoService: todoService,
 	}
 
-	authMiddleware := middlewares.AuthMiddleware(config.Env, sessionService)
+	_ = middlewares.AuthMiddleware(config.Env, sessionService)
 
 	r.Route("/todos", func(r router.Router) {
 		// INFO: to apply middleware to a group of routes use Use method
-		r.Use(authMiddleware)
+		// r.Use(authMiddleware)
 
 		r.Get("/", controller.List)
 		r.Get("/{id}", controller.Get)
@@ -55,29 +42,22 @@ func NewTodoController(r router.Router, todoService interfaces.TodoService, sess
 }
 
 func (tc *TodoController) List(w http.ResponseWriter, r *http.Request) {
-	page := renderer.GetPageTemplate("todos")
-	data := map[string]interface{}{
-		"Title": "Todos",
-		"Path":  "/todos",
-		"Form": &TodoCreateForm{
-			CSRF:        csrf.TemplateField(r),
-			Title:       "",
-			Description: "",
-			Error:       "",
-		},
-		"Todos": []*result.TodoResult{},
-		"Error": "",
-	}
+	data := pages.TodosPageData{}
+	data.Form = components.NewTodoCreateForm(r)
+
 	res, err := tc.todoService.ListTodos(r.Context())
+
 	if err != nil {
-		data["Error"] = err.Error()
+		data.Error = err.Error()
 		w.WriteHeader(500)
-		page.ExecuteTemplate(w, "base", data)
+		pages.Todos(data).Render(r.Context(), w)
 		return
 	}
-	data["Todos"] = res.Todos
+
+	data.Todos = res.Todos
+
 	w.WriteHeader(200)
-	page.ExecuteTemplate(w, "base", data)
+	pages.Todos(data).Render(r.Context(), w)
 }
 
 func (tc *TodoController) Get(w http.ResponseWriter, r *http.Request) {
@@ -95,32 +75,19 @@ func (tc *TodoController) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page := renderer.GetPageTemplate("todo-details")
-	data := map[string]interface{}{
-		"Title": res.Todo.Title,
-		"Path":  "/todos/" + utils.ParseToString(id),
-		"Todo":  res.Todo,
-		"EditForm": &TodoCreateForm{
-			CSRF:        csrf.TemplateField(r),
-			ID:          res.Todo.ID,
-			Title:       res.Todo.Title,
-			Description: res.Todo.Description,
-			Error:       "",
-		},
-		"DeleteForm": &TodoDeleteForm{
-			CSRF: csrf.TemplateField(r),
-			ID:   res.Todo.ID,
-		},
-		"Error": "",
-	}
+	data := pages.TodoDetailsPageData{}
+
+	data.Todo = res.Todo
+	data.EditForm = components.NewTodoEditForm(r, res.Todo)
+	data.DeleteForm = components.NewTodoDeleteForm(r, res.Todo.ID)
+
 	w.WriteHeader(200)
-	page.ExecuteTemplate(w, "base", data)
+	pages.TodoDetails(data).Render(r.Context(), w)
 }
 
 func (tc *TodoController) Create(w http.ResponseWriter, r *http.Request) {
-	tmpl := renderer.GetBaseTemplate()
-	form := &TodoCreateForm{
-		CSRF:        csrf.TemplateField(r),
+	form := &components.TodoCreateFormData{
+		CSRF:        csrf.GetCSRFField(r),
 		Title:       strings.TrimSpace(r.FormValue("title")),
 		Description: strings.TrimSpace(r.FormValue("description")),
 	}
@@ -129,20 +96,19 @@ func (tc *TodoController) Create(w http.ResponseWriter, r *http.Request) {
 		Title:       form.Title,
 		Description: form.Description,
 	})
+
 	if err != nil {
 		form.Error = err.Error()
 		w.WriteHeader(400)
-		tmpl.ExecuteTemplate(w, "todo-create-form", form)
+		components.TodoCreateForm(form).Render(r.Context(), w)
 		return
 	}
 
-	form = &TodoCreateForm{
-		CSRF: csrf.TemplateField(r),
-	}
+	form = components.NewTodoCreateForm(r)
 
 	w.WriteHeader(201)
-	tmpl.ExecuteTemplate(w, "todo-item-oob", result.Todo)
-	tmpl.ExecuteTemplate(w, "todo-create-form", form)
+	components.TodoItemOOB(result.Todo).Render(r.Context(), w)
+	components.TodoCreateForm(form).Render(r.Context(), w)
 }
 
 func (tc *TodoController) Update(w http.ResponseWriter, r *http.Request) {
@@ -153,39 +119,32 @@ func (tc *TodoController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl := renderer.GetBaseTemplate()
-
-	editForm := &TodoCreateForm{
-		CSRF:        csrf.TemplateField(r),
+	editForm := components.NewTodoEditForm(r, &result.TodoResult{
 		ID:          id,
 		Title:       strings.TrimSpace(r.FormValue("title")),
 		Description: strings.TrimSpace(r.FormValue("description")),
-	}
+	})
 
 	result, err := tc.todoService.UpdateTodo(r.Context(), &command.UpdateTodoCommand{
 		ID:          id,
 		Title:       editForm.Title,
 		Description: editForm.Description,
 	})
+
 	if err != nil {
 		editForm.Error = err.Error()
 		w.WriteHeader(400)
-		tmpl.ExecuteTemplate(w, "todo-edit-form", editForm)
+		components.TodoEditForm(editForm).Render(r.Context(), w)
 		return
 	}
+
+	editForm = components.NewTodoEditForm(r, result.Todo)
 
 	w.Header().Add("Hx-Trigger", "close_edit_form")
 	w.WriteHeader(200)
 
-	editForm = &TodoCreateForm{
-		CSRF:        csrf.TemplateField(r),
-		ID:          id,
-		Title:       result.Todo.Title,
-		Description: result.Todo.Description,
-	}
-
-	tmpl.ExecuteTemplate(w, "todo-details-info-oob", result.Todo)
-	tmpl.ExecuteTemplate(w, "todo-edit-form", editForm)
+	components.TodoDetailsInfoOOB(result.Todo).Render(r.Context(), w)
+	components.TodoEditForm(editForm).Render(r.Context(), w)
 }
 
 func (tc *TodoController) Delete(w http.ResponseWriter, r *http.Request) {
@@ -195,15 +154,11 @@ func (tc *TodoController) Delete(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	deleteForm := &TodoDeleteForm{
-		CSRF: csrf.TemplateField(r),
-		ID:   id,
-	}
 
-	page := renderer.GetPageTemplate("todo-details")
+	deleteForm := components.NewTodoDeleteForm(r, id)
 	if err := tc.todoService.DeleteTodo(r.Context(), &command.DeleteTodoCommand{ID: id}); err != nil {
 		w.WriteHeader(400)
-		page.ExecuteTemplate(w, "todo-delete-form", deleteForm)
+		components.TodoDeleteForm(deleteForm).Render(r.Context(), w)
 		errorString := fmt.Sprintf("<div id=\"error-message\" hx-swap-oob=\"true\"><p style='color: red;'>%s</p></div>", err.Error())
 		renderer.RenderString(w, errorString, nil)
 		return

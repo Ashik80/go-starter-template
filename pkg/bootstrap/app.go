@@ -35,7 +35,10 @@ func Init(ctx context.Context) *App {
 	a.initLogger()
 	a.initConfig()
 	a.initDB()
-	a.initTemplatingEngine()
+
+	// if not using templ package enable this to use std templates
+	// a.initTemplatingEngine()
+
 	a.initRouterMux()
 	a.initFileServer()
 	a.initControllers()
