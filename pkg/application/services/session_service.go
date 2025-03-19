@@ -33,12 +33,12 @@ func (s *SessionService) CreateSession(ctx context.Context, sessionCommand *comm
 	return command.NewCreateSessionCommandResult(session), nil
 }
 
-func (s *SessionService) GetSession(ctx context.Context, sessionId string) (*query.SessionQueryResult, error) {
+func (s *SessionService) GetSession(ctx context.Context, sessionId string) (*query.GetSessionQuery, error) {
 	session, err := s.sessionRepository.GetWithUser(ctx, sessionId)
 	if err != nil {
 		return nil, err
 	}
-	return query.NewSessionQueryResult(session), nil
+	return query.NewGetSessionQuery(session), nil
 }
 
 func (s *SessionService) DeleteSession(ctx context.Context, sessionId string) error {

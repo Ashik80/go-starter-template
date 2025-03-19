@@ -5,12 +5,12 @@ import (
 	"go-starter-template/pkg/domain/entities"
 )
 
-type UserQueryResult struct {
+type GetUserQuery struct {
 	User *result.UserResult
 }
 
-func NewUserQueryResult(user *entities.User) *UserQueryResult {
-	return &UserQueryResult{
+func NewGetUserQuery(user *entities.User) *GetUserQuery {
+	return &GetUserQuery{
 		User: result.NewUserResult(user),
 	}
 }

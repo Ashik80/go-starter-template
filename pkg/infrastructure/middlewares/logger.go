@@ -2,10 +2,11 @@ package middlewares
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"go-starter-template/pkg/infrastructure/logger"
 )
 
 type CustomResponseWriter struct {
@@ -20,12 +21,16 @@ func (crw *CustomResponseWriter) WriteHeader(code int) {
 }
 
 func (crw *CustomResponseWriter) Write(b []byte) (int, error) {
+	if crw.statusCode == 0 {
+		crw.statusCode = 200
+	}
 	n, err := crw.ResponseWriter.Write(b)
 	crw.bytesWritten += int64(n)
 	return n, err
 }
 
 func Logger(next http.Handler) http.Handler {
+	log := logger.NewLogger()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/web/") {
 			next.ServeHTTP(w, r)
@@ -46,7 +51,7 @@ func Logger(next http.Handler) http.Handler {
 			url = fmt.Sprintf("%s?%s", url, r.URL.RawQuery)
 		}
 
-		log.Printf(
+		logMessage := fmt.Sprintf(
 			"\"%s %s %s\" from %s - %d %dB completed in %s",
 			r.Method,
 			url,
@@ -56,5 +61,14 @@ func Logger(next http.Handler) http.Handler {
 			crw.bytesWritten,
 			duration,
 		)
+
+		switch {
+		case crw.statusCode >= 400:
+			log.Error(logMessage)
+		case crw.statusCode >= 300:
+			log.Info(logMessage)
+		default:
+			log.Success(logMessage)
+		}
 	})
 }

@@ -194,7 +194,7 @@ func (n *NetServerMux) addToRoutes(method string, pattern string, handler http.H
 	}
 
 	n.handlers[key] = &Route{
-		handler:    n.applyMiddlewares(handler),
+		handler:    handler,
 		paramNames: paramNames,
 		hasParams:  hasParams,
 	}

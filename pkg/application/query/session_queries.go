@@ -5,12 +5,12 @@ import (
 	"go-starter-template/pkg/domain/entities"
 )
 
-type SessionQueryResult struct {
+type GetSessionQuery struct {
 	Session *result.SessionResult
 }
 
-func NewSessionQueryResult(session *entities.Session) *SessionQueryResult {
-	return &SessionQueryResult{
+func NewGetSessionQuery(session *entities.Session) *GetSessionQuery {
+	return &GetSessionQuery{
 		Session: result.NewSessionResult(session),
 	}
 }

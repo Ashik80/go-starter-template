@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +13,7 @@ import (
 	"go-starter-template/pkg/infrastructure/config"
 	"go-starter-template/pkg/infrastructure/db/postgres"
 	"go-starter-template/pkg/infrastructure/factories"
+	"go-starter-template/pkg/infrastructure/logger"
 	"go-starter-template/pkg/infrastructure/renderer"
 	"go-starter-template/pkg/infrastructure/router"
 	"go-starter-template/pkg/interfaces/controllers"
@@ -26,6 +26,7 @@ type App struct {
 	Router router.Router
 	DB     *sql.DB
 	server *http.Server
+	log    *logger.Logger
 }
 
 func Init(ctx context.Context) *App {
@@ -47,6 +48,10 @@ func Init(ctx context.Context) *App {
 	return a
 }
 
+func (a *App) GetLogger() *logger.Logger {
+	return a.log
+}
+
 func (a *App) initControllers() {
 	controllers.NewHealthController(a.Router, a.Config, a.DB)
 	controllers.NewHomeController(a.Router)
@@ -58,23 +63,23 @@ func (a *App) initControllers() {
 	)
 	controllers.NewAuthController(
 		a.Router,
-		factories.NewUserServiceWithPQRepository(a.DB),
+		factories.NewUserServiceWithPQRepository(a.DB, a.log),
 		a.Config,
 	)
 }
 
 func (a *App) initLogger() {
-	log.SetOutput(os.Stdout)
-	log.SetFlags(log.Ldate | log.Ltime)
+	a.log = logger.NewLogger()
+	a.log.Info("logger initialized")
 }
 
 func (a *App) initConfig() {
 	conf, err := config.NewConfig()
 	if err != nil {
-		log.Fatalf("ERROR: %v", err)
+		a.log.Fatal("%v", err)
 	}
 	a.Config = conf
-	log.Println("INFO: configuration initialized")
+	a.log.Info("configuration initialized")
 }
 
 func (a *App) initApplicationServer() {
@@ -89,34 +94,34 @@ func (a *App) initApplicationServer() {
 func (a *App) initFileServer() {
 	fs := http.FileServer(http.Dir("./web"))
 	a.Router.Handle("/web/", http.StripPrefix("/web/", fs))
-	log.Println("INFO: file server initialized in directory web/ directory")
+	a.log.Info("file server initialized in directory web/ directory")
 }
 
 func (a *App) initRouterMux() {
 	a.Router = router.NewNetServerMux(a.Config)
-	log.Println("INFO: router initialized")
+	a.log.Info("router initialized")
 }
 
 func (a *App) initDB() {
 	db, err := postgres.NewDatabaseConfig(a.Config)
 	if err != nil {
-		log.Fatalf("ERROR: failed to open database: %v", err)
+		a.log.Fatal("failed to open database: %v", err)
 	}
 	a.DB = db
-	log.Println("INFO: database initialized")
+	a.log.Info("database initialized")
 }
 
 func (a *App) initTemplatingEngine() {
-	err := renderer.InitBaseTemplate()
+	err := renderer.InitBaseTemplate(a.log)
 	if err != nil {
-		log.Fatalf("ERROR: %v", err)
+		a.log.Fatal("%v", err)
 	}
 	renderer.RegisterPageTemplates()
-	log.Println("INFO: templates parsed")
+	a.log.Info("templates parsed")
 }
 
 func (a *App) Serve() error {
-	log.Printf("INFO: server running on port %s\n", a.server.Addr)
+	a.log.Info("server running on port %s\n", a.server.Addr)
 	return a.server.ListenAndServe()
 }
 
@@ -126,14 +131,14 @@ func (a *App) GracefulShutdown(ctx context.Context) {
 
 	<-quitCh
 
-	log.Println("INFO: shutting down server...")
+	a.log.Info("shutting down server...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := a.server.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("ERROR: failed to shutdown server: %v", err)
+		a.log.Fatal("failed to shutdown server: %v", err)
 	}
 
-	log.Println("INFO: server shut down gracefully")
+	a.log.Info("server shut down gracefully")
 }

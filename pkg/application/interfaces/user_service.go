@@ -9,5 +9,5 @@ import (
 type UserService interface {
 	Login(ctx context.Context, loginCommand *command.CreateLoginCommand) (*command.CreateLoginCommandResult, error)
 	Signup(ctx context.Context, signupCommand *command.CreateSignupCommand) (*command.CreateSignupCommandResult, error)
-	GetUserByEmail(ctx context.Context, email string) (*query.UserQueryResult, error)
+	GetUserByEmail(ctx context.Context, email string) (*query.GetUserQuery, error)
 }

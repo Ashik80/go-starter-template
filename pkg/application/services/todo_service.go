@@ -20,22 +20,22 @@ func NewTodoService(repo repositories.TodoRepository) interfaces.TodoService {
 	}
 }
 
-func (s *TodoService) ListTodos(ctx context.Context) (*query.TodoListQueryResult, error) {
+func (s *TodoService) ListTodos(ctx context.Context) (*query.GetTodoListQuery, error) {
 	todos, err := s.todoRepository.List(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return query.NewTodoListQueryResult(todos), nil
+	return query.NewGetTodoListQuery(todos), nil
 }
 
-func (s *TodoService) GetTodo(ctx context.Context, id int) (*query.TodoQueryResult, error) {
+func (s *TodoService) GetTodo(ctx context.Context, id int) (*query.GetTodoQuery, error) {
 	todo, err := s.todoRepository.Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return query.NewTodoQueryResult(todo), nil
+	return query.NewGetTodoQuery(todo), nil
 }
 
 func (s *TodoService) CreateTodo(ctx context.Context, todoCommand *command.CreateTodoCommand) (*command.CreateTodoCommandResult, error) {

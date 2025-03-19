@@ -1,7 +1,9 @@
 package security
 
 import (
-	"log"
+	"fmt"
+
+	"go-starter-template/pkg/infrastructure/logger"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -11,21 +13,26 @@ type PasswordHasher interface {
 	CompareHashAndPassword(hashedPassword, password string) error
 }
 
-type BcryptPasswordHasher struct{}
+type BcryptPasswordHasher struct {
+	log *logger.Logger
+}
 
-func NewBcryptPasswordHasher() PasswordHasher {
-	return &BcryptPasswordHasher{}
+func NewBcryptPasswordHasher(log *logger.Logger) PasswordHasher {
+	return &BcryptPasswordHasher{log}
 }
 
 func (b *BcryptPasswordHasher) GenerateFromPassword(password string, cost int) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), cost)
 	if err != nil {
-		log.Printf("ERROR: failed to generate password hash: %v\n", err)
-		return "", err
+		b.log.Error("failed to generate password hash: %v", err)
+		return "", fmt.Errorf("failed to generate password hash: %w", err)
 	}
 	return string(hash), nil
 }
 
 func (b *BcryptPasswordHasher) CompareHashAndPassword(hashedPassword, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password)); err != nil {
+		return fmt.Errorf("failed to compare password: %w", err)
+	}
+	return nil
 }

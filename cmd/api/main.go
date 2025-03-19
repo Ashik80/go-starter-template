@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"go-starter-template/pkg/bootstrap"
@@ -11,10 +10,11 @@ import (
 func main() {
 	ctx := context.Background()
 	app := bootstrap.Init(ctx)
+	log := app.GetLogger()
 
 	go func() {
 		if err := app.Serve(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("failed to start application: %v", err)
+			log.Fatal("failed to start application: %v", err)
 		}
 	}()
 

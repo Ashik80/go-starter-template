@@ -2,15 +2,18 @@ package renderer
 
 import (
 	"fmt"
+	"go-starter-template/pkg/infrastructure/logger"
 	"html/template"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-var baseTemplate *template.Template
+var (
+	baseTemplate *template.Template
+	rendererLog  *logger.Logger
+)
 
 const (
 	baseFile          = "web/templates/base.html"
@@ -20,7 +23,8 @@ const (
 	defaultLayoutFile = layoutsDir + "/main.html"
 )
 
-func InitBaseTemplate() error {
+func InitBaseTemplate(log *logger.Logger) error {
+	rendererLog = log
 	partials, err := getPartialFiles()
 	if err != nil {
 		return err
@@ -43,12 +47,12 @@ func ParseTemplate(page string, layout ...string) *template.Template {
 
 	tmpl, err := baseTemplate.Clone()
 	if err != nil {
-		log.Fatalf("ERROR: failed to clone base template: %v", err)
+		rendererLog.Fatal("failed to clone base template: %v", err)
 	}
 
 	tmpl, err = tmpl.ParseFiles(layoutFile, file)
 	if err != nil {
-		log.Fatalf("ERROR: failed to parse template: %v", err)
+		rendererLog.Fatal("failed to parse template: %v", err)
 	}
 
 	return tmpl
@@ -63,7 +67,7 @@ func RenderString(w http.ResponseWriter, html string, data any) error {
 	tmpl, err := template.New("").Parse(html)
 	if err != nil {
 		errorMsg := "failed to parse string"
-		log.Printf("ERROR: %s\n", errorMsg)
+		rendererLog.Error("%s\n", errorMsg)
 		return fmt.Errorf("%s", errorMsg)
 	}
 	return tmpl.Execute(w, data)

@@ -87,11 +87,11 @@ func (s *UserService) Signup(ctx context.Context, signupCommand *command.CreateS
 	return command.NewSignupUserCommandResult(createdUser), nil
 }
 
-func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*query.UserQueryResult, error) {
+func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*query.GetUserQuery, error) {
 	user, err := s.userRepository.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, err
 	}
 
-	return query.NewUserQueryResult(user), nil
+	return query.NewGetUserQuery(user), nil
 }

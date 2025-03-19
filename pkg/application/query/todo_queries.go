@@ -5,28 +5,28 @@ import (
 	"go-starter-template/pkg/domain/entities"
 )
 
-type TodoQueryResult struct {
+type GetTodoQuery struct {
 	Todo *result.TodoResult
 }
 
-type TodoListQueryResult struct {
+type GetTodoListQuery struct {
 	Todos []*result.TodoResult
 }
 
-func NewTodoQueryResult(todo *entities.Todo) *TodoQueryResult {
-	return &TodoQueryResult{
+func NewGetTodoQuery(todo *entities.Todo) *GetTodoQuery {
+	return &GetTodoQuery{
 		Todo: result.NewTodoResult(todo),
 	}
 }
 
-func NewTodoListQueryResult(todos []*entities.Todo) *TodoListQueryResult {
+func NewGetTodoListQuery(todos []*entities.Todo) *GetTodoListQuery {
 	var todoResults []*result.TodoResult
 
 	for _, todo := range todos {
 		todoResults = append(todoResults, result.NewTodoResult(todo))
 	}
 
-	return &TodoListQueryResult{
+	return &GetTodoListQuery{
 		Todos: todoResults,
 	}
 }
