@@ -2,7 +2,7 @@ include .env
 
 dbDriver = postgres
 dsn = user=${DB_USER} dbname=${DB_NAME} password=${DB_PASSWORD} host=${DB_HOST} port=${DB_PORT} sslmode=${DB_SSL_MODE}
-migrationsDir = ./pkg/migrations
+migrationsDir = ./internal/migrations
 
 db-status:
 	@GOOSE_DRIVER="$(dbDriver)" GOOSE_DBSTRING="$(dsn)" goose status -dir $(migrationsDir)

@@ -1,0 +1,79 @@
+package components
+
+import (
+	"net/http"
+	"strconv"
+
+	"github.com/gorilla/csrf"
+	"go-starter-template/internal/application/result"
+)
+
+func NewTodoEditForm(r *http.Request, todo *result.TodoResult) *TodoCreateFormData {
+	return &TodoCreateFormData{
+		CSRF:        csrf.TemplateField(r),
+		ID:          todo.ID,
+		Title:       todo.Title,
+		Description: todo.Description,
+	}
+}
+
+templ TodoEditForm(form *TodoCreateFormData) {
+	<form
+		hx-put={ "/todos/" + strconv.Itoa(form.ID) }
+		hx-swap="outerHTML"
+		class="max-w-sm"
+		@close_edit_form="isEditMode = false"
+	>
+		@templ.Raw(form.CSRF)
+		<div class="mb-5">
+			<label
+				for="message"
+				class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+			>Title</label>
+			<input
+				name="title"
+				class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+				placeholder="Title"
+				required
+				if form.Title != "" {
+					value={ form.Title }
+				}
+				autocomplete="off"
+			/>
+		</div>
+		<div class="mb-5">
+			<label
+				for="message"
+				class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+			>Description</label>
+			<textarea
+				id="message"
+				rows="4"
+				class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+				placeholder="Leave a description..."
+				name="description"
+				autocomplete="off"
+			>{ form.Description }</textarea>
+		</div>
+		if form.Error != "" {
+			<p class="text-sm text-red-600 dark:text-red-500 mb-5">{ form.Error }</p>
+		}
+		<div class="mb-5">
+			<button
+				id="save-button"
+				type="submit"
+				class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 cursor-pointer"
+			>
+				Save
+			</button>
+			<button
+				@click="isEditMode = false"
+				id="cancel-button"
+				type="button"
+				class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-700 dark:hover:bg-gray-600 dark:focus:ring-gray-700 dark:border-gray-700 cursor-pointer"
+			>
+				Cancel
+			</button>
+		</div>
+	</form>
+}

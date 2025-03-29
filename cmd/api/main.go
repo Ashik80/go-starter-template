@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"go-starter-template/pkg/bootstrap"
+	"go-starter-template/internal/bootstrap"
 )
 
 func main() {

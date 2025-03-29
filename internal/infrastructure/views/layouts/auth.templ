@@ -1,0 +1,17 @@
+package layouts
+
+import (
+	"go-starter-template/internal/infrastructure/views"
+	"go-starter-template/internal/infrastructure/views/components"
+)
+
+templ AuthLayout(title string) {
+	@views.Base(title) {
+		<div class="h-screen flex flex-col">
+			@components.PublicHeader()
+			<div class="m-auto max-w-xl w-full min-w-3xs">
+				{ children... }
+			</div>
+		</div>
+	}
+}
