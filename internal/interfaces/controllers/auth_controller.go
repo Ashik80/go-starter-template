@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"go-starter-template/internal/application/command"
-	"go-starter-template/internal/application/interfaces"
+	"go-starter-template/internal/application/services"
 	"go-starter-template/internal/domain/valueobject"
 	"go-starter-template/internal/httputil"
 	"go-starter-template/internal/infrastructure/config"
@@ -18,7 +18,7 @@ import (
 )
 
 type AuthController struct {
-	userService interfaces.UserService
+	userService services.IUserService
 	config      *config.Config
 }
 
@@ -41,7 +41,7 @@ type SignupForm struct {
 	FormError string
 }
 
-func NewAuthController(r router.Router, userService interfaces.UserService, config *config.Config) {
+func NewAuthController(r router.Router, userService services.IUserService, config *config.Config) {
 	controller := &AuthController{
 		userService: userService,
 		config:      config,

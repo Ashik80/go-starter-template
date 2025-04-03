@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"go-starter-template/internal/application/interfaces"
+	"go-starter-template/internal/application/services"
 	"go-starter-template/internal/httputil"
 )
 
@@ -14,7 +14,7 @@ const (
 	userContextKey contextKey = "user"
 )
 
-func AuthMiddleware(env string, sessionService interfaces.SessionService) MiddlewareFunc {
+func AuthMiddleware(env string, sessionService services.ISessionService) MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

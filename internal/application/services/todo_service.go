@@ -4,17 +4,24 @@ import (
 	"context"
 
 	"go-starter-template/internal/application/command"
-	"go-starter-template/internal/application/interfaces"
 	"go-starter-template/internal/application/query"
 	"go-starter-template/internal/domain/entities"
 	"go-starter-template/internal/domain/repositories"
 )
 
-type TodoService struct {
-	todoRepository repositories.TodoRepository
+type ITodoService interface {
+	ListTodos(ctx context.Context) (*query.GetTodoListQuery, error)
+	GetTodo(ctx context.Context, id int) (*query.GetTodoQuery, error)
+	CreateTodo(ctx context.Context, todoCommand *command.CreateTodoCommand) (*command.CreateTodoCommandResult, error)
+	UpdateTodo(ctx context.Context, todoCommand *command.UpdateTodoCommand) (*command.UpdateTodoCommandResult, error)
+	DeleteTodo(ctx context.Context, todoCommand *command.DeleteTodoCommand) error
 }
 
-func NewTodoService(repo repositories.TodoRepository) interfaces.TodoService {
+type TodoService struct {
+	todoRepository repositories.ITodoRepository
+}
+
+func NewTodoService(repo repositories.ITodoRepository) ITodoService {
 	return &TodoService{
 		todoRepository: repo,
 	}

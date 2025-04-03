@@ -4,24 +4,29 @@ import (
 	"context"
 
 	"go-starter-template/internal/application/command"
-	"go-starter-template/internal/application/interfaces"
 	"go-starter-template/internal/application/query"
 	"go-starter-template/internal/domain/entities"
 	"go-starter-template/internal/domain/repositories"
 	"go-starter-template/pkg/security"
 )
 
+type IUserService interface {
+	Login(ctx context.Context, loginCommand *command.CreateLoginCommand) (*command.CreateLoginCommandResult, error)
+	Signup(ctx context.Context, signupCommand *command.CreateSignupCommand) (*command.CreateSignupCommandResult, error)
+	GetUserByEmail(ctx context.Context, email string) (*query.GetUserQuery, error)
+}
+
 type UserService struct {
-	userRepository repositories.UserRepository
-	sessionService interfaces.SessionService
-	passwordHasher security.PasswordHasher
+	userRepository repositories.IUserRepository
+	sessionService ISessionService
+	passwordHasher security.IPasswordHasher
 }
 
 func NewUserService(
-	userRepository repositories.UserRepository,
-	passwordHasher security.PasswordHasher,
-	sessionService interfaces.SessionService,
-) interfaces.UserService {
+	userRepository repositories.IUserRepository,
+	passwordHasher security.IPasswordHasher,
+	sessionService ISessionService,
+) IUserService {
 	return &UserService{
 		userRepository: userRepository,
 		passwordHasher: passwordHasher,

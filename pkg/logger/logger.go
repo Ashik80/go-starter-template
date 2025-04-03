@@ -25,26 +25,26 @@ func NewLogger() *Logger {
 	}
 }
 
-func (l *Logger) Info(format string, v ...interface{}) {
+func (l *Logger) Info(format string, v ...any) {
 	l.logger.Printf(ColorBlue+"[INFO] "+ColorReset+format, v...)
 }
 
-func (l *Logger) Warn(format string, v ...interface{}) {
+func (l *Logger) Warn(format string, v ...any) {
 	l.logger.Printf(ColorYellow+"[WARN] "+ColorReset+format, v...)
 }
 
-func (l *Logger) Error(format string, v ...interface{}) {
+func (l *Logger) Error(format string, v ...any) {
 	l.logger.Printf(ColorRed+"[ERROR] "+ColorReset+format, v...)
 }
 
-func (l *Logger) Success(format string, v ...interface{}) {
+func (l *Logger) Success(format string, v ...any) {
 	l.logger.Printf(ColorGreen+"[SUCCESS] "+ColorReset+format, v...)
 }
 
-func (l *Logger) Debug(format string, v ...interface{}) {
+func (l *Logger) Debug(format string, v ...any) {
 	l.logger.Printf(ColorCyan+"[DEBUG] "+ColorReset+format, v...)
 }
 
-func (l *Logger) Fatal(format string, v ...interface{}) {
+func (l *Logger) Fatal(format string, v ...any) {
 	l.logger.Fatalf(ColorRed+"[FATAL] "+ColorReset+format, v...)
 }

@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type PasswordHasher interface {
+type IPasswordHasher interface {
 	GenerateFromPassword(password string, cost int) (string, error)
 	CompareHashAndPassword(hashedPassword, password string) error
 }
@@ -17,7 +17,7 @@ type BcryptPasswordHasher struct {
 	log *logger.Logger
 }
 
-func NewBcryptPasswordHasher(log *logger.Logger) PasswordHasher {
+func NewBcryptPasswordHasher(log *logger.Logger) IPasswordHasher {
 	return &BcryptPasswordHasher{log}
 }
 

@@ -35,7 +35,7 @@ type PQSessionRepository struct {
 	db *sql.DB
 }
 
-func NewPQSessionRepository(db *sql.DB) repositories.SessionRepository {
+func NewPQSessionRepository(db *sql.DB) repositories.ISessionRepository {
 	return &PQSessionRepository{db}
 }
 

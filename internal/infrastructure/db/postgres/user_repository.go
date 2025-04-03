@@ -35,7 +35,7 @@ type PQUserRepository struct {
 	db *sql.DB
 }
 
-func NewPQUserRepository(db *sql.DB) repositories.UserRepository {
+func NewPQUserRepository(db *sql.DB) repositories.IUserRepository {
 	return &PQUserRepository{db}
 }
 

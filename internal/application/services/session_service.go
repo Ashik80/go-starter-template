@@ -4,17 +4,22 @@ import (
 	"context"
 
 	"go-starter-template/internal/application/command"
-	"go-starter-template/internal/application/interfaces"
 	"go-starter-template/internal/application/query"
 	"go-starter-template/internal/domain/entities"
 	"go-starter-template/internal/domain/repositories"
 )
 
-type SessionService struct {
-	sessionRepository repositories.SessionRepository
+type ISessionService interface {
+	CreateSession(ctx context.Context, sessionCommand *command.CreateSessionCommand) (*command.CreateSessionCommandResult, error)
+	GetSession(ctx context.Context, sessionId string) (*query.GetSessionQuery, error)
+	DeleteSession(ctx context.Context, sessionId string) error
 }
 
-func NewSessionService(sessionRepository repositories.SessionRepository) interfaces.SessionService {
+type SessionService struct {
+	sessionRepository repositories.ISessionRepository
+}
+
+func NewSessionService(sessionRepository repositories.ISessionRepository) ISessionService {
 	return &SessionService{
 		sessionRepository: sessionRepository,
 	}

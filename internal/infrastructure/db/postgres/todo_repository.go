@@ -33,7 +33,7 @@ type PQTodoRepository struct {
 	db *sql.DB
 }
 
-func NewPQTodoRepository(db *sql.DB) repositories.TodoRepository {
+func NewPQTodoRepository(db *sql.DB) repositories.ITodoRepository {
 	return &PQTodoRepository{db}
 }
 

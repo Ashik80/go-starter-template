@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"go-starter-template/internal/application/command"
-	"go-starter-template/internal/application/interfaces"
 	"go-starter-template/internal/application/result"
+	"go-starter-template/internal/application/services"
 	"go-starter-template/internal/infrastructure/config"
 	"go-starter-template/internal/infrastructure/middlewares"
 	"go-starter-template/internal/infrastructure/views/components"
@@ -19,10 +19,10 @@ import (
 )
 
 type TodoController struct {
-	todoService interfaces.TodoService
+	todoService services.ITodoService
 }
 
-func NewTodoController(r router.Router, todoService interfaces.TodoService, sessionService interfaces.SessionService, config *config.Config) {
+func NewTodoController(r router.Router, todoService services.ITodoService, sessionService services.ISessionService, config *config.Config) {
 	controller := &TodoController{
 		todoService: todoService,
 	}
